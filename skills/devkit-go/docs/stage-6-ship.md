@@ -6,6 +6,7 @@
 
 ## 必做事项
 - 生成符合 conventional commits 的 commit message
+- 根据 Size 判断是否需要先经过 `pre-commit` gate
 - 执行 `git commit`
 - 提示用户是否继续 push 或创建 PR
 - 将 `_meta.yaml` 标记为 `completed`
@@ -17,5 +18,10 @@
 ## 规则
 1. commit message 必须是 conventional commits 风格。
 2. 如果 Size ≥ L，必须先经过 review gate，再允许提交。
-3. 提交后要向用户展示 commit hash。
-4. push 和创建 PR 只提示，不默认执行，除非用户明确要求。
+3. 如果 Size ≥ S，提交前必须经过 `pre-commit` 确认，明确本次提交粒度、验证状态与剩余风险。
+4. XS：允许单提交直接交付。
+5. S：默认单提交；若实现和验证记录明显可分，则允许拆为两个提交，但不得制造无意义碎片。
+6. M/L：默认按可审阅逻辑拆分提交，避免把多个独立主题压进一个 commit。
+7. 提交后要向用户展示 commit hash。
+8. push 和创建 PR 只提示，不默认执行，除非用户明确要求。
+9. 若 VERIFY 结果为 `partial-pass`，必须在 `pre-commit` 中再次确认用户接受剩余问题，才能提交。

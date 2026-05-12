@@ -13,7 +13,7 @@ trigger: manual
 - 基于复杂度自动裁剪流程阶段。
 - 按阶段产出 proposal / requirements / design / tasks / verification 等文档。
 - 在 BUILD 阶段执行编码实现并持续验证。
-- 在 VERIFY 阶段对照验收标准检查交付结果。
+- 在 VERIFY 阶段对照验收标准检查交付结果，并支持 XS 的 `5-lite` 与受控 `partial-pass`。
 - 在 SHIP 阶段生成 conventional commits 风格提交信息并完成 git commit。
 
 # 启动时必读
@@ -27,9 +27,9 @@ trigger: manual
 - 进入 2-DESIGN 前读取：`docs/stage-2-design.md`
 - 进入 3-PLAN 前读取：`docs/stage-3-plan.md`
 - 进入 4-BUILD 前读取：`docs/stage-4-build.md`
-- 进入 5-VERIFY 前读取：`docs/stage-5-verify.md`
+- 进入 5-VERIFY 前读取：`docs/stage-5-verify.md`；XS 的 `5-lite` 也使用同一文档中的轻量验证模式
 - 进入 6-SHIP 前读取：`docs/stage-6-ship.md`
-- 需要暂停审核或失败处理时读取：`docs/gates.md`
+- 需要暂停审核、`pre-commit`、`partial-pass` 或失败处理时读取：`docs/gates.md`
 - 每次阶段切换都要遵循 `docs/workflow-overview.md` 中的阶段推进模板与 `docs/size-routing.md` 中的路由规则
 
 # 执行规则
