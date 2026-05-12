@@ -37,16 +37,20 @@ trigger: manual
 ## 在规划安装项之前必读
 4. `docs/install-planning.md`
 
+## 命中空项目 / 一句话需求时必读
+5. `docs/baseline-bootstrap.md`
+
 ## 在准备禁用重复项之前必读
-5. `docs/redundancy-policy.md`
+6. `docs/redundancy-policy.md`
 
 # 阶段执行
 1. 先依据 `docs/project-analysis.md` 完成项目分析并输出摘要。
 2. 依据 `docs/claude-md-strategy.md` 生成或优化 `CLAUDE.md` 方案；如果要改已有 `CLAUDE.md`，先展示建议并等待确认。
 3. 依据 `docs/install-planning.md` 形成“计划安装清单”，并依据 `docs/bytedcli-policy.md` 判断是否强制纳入 bytedcli。
-4. 等用户确认后再执行安装。
-5. 依据 `docs/redundancy-policy.md` 检测和禁用冗余能力。
-6. 最后输出结构化总结：执行操作、`CLAUDE.md` 变更摘要、已安装项、已禁用项、后续建议。
+4. 如果命中空项目 / 一句话需求场景，先读取 `docs/baseline-bootstrap.md`，切换到基础保障模式，确保安装清单不为空。
+5. 等用户确认后再执行安装。
+6. 依据 `docs/redundancy-policy.md` 检测和禁用冗余能力。
+7. 最后输出结构化总结：执行操作、`CLAUDE.md` 变更摘要、已安装项、已禁用项、后续建议。
 
 # 输出要求
 - 分析阶段：先给项目摘要，再给下一步建议。

@@ -117,6 +117,7 @@ devkit/
 - 手动触发，不允许模型自动调用
 - 以入口 `SKILL.md` + `docs/` 子文档的方式渐进完成初始化
 - 扫描项目技术栈与已有 AI 配置
+- 对空项目 / 一句话需求场景自动切换到 baseline bootstrap，先给出基础保障安装清单
 - 生成或优化 `CLAUDE.md`
 - 规划并安装必要的 skill / plugin / MCP
 - 对冗余能力做检测与禁用
@@ -155,15 +156,16 @@ devkit/
 - 有 `bin` 入口：`ai-devkit`
 - 有可运行的安装脚本：`bin/install.js`
 - 有 `files` 白名单，能控制打包内容
+- 已补 `repository` / `homepage` / `bugs` / `author` 等基础 metadata
+- 已补最小发布检查脚本：`npm run check`、`npm run pack:check`
 - 已经可以通过 GitHub 仓库管理源码、issue、release 与 tag
 
 ### 还缺的关键项
 如果你要稳定支持 `npm install -g ai-devkit` 或 `npx ai-devkit`，建议继续补这些：
-- `package.json` 中的 `repository` / `homepage` / `bugs`
-- `author` 与更完整的 package metadata
 - 发布前版本管理策略（tag / release / changelog）
-- 至少一次 `npm pack` 验证，确认最终 tarball 内容正确
+- 至少一次真实 `npm pack` 或试发布验证，确认最终 tarball 内容正确
 - 最好补一个最小 CI，至少跑 `node bin/install.js --help`
+- 如果准备公开发布，再补 npm 账号、包名占用确认与 release 流程
 
 ### 关于“npm 或 npx 也用 GitHub 管理”
 可以，但要分清两层：
@@ -182,7 +184,7 @@ devkit/
 ### 推荐发布路径
 1. 继续用 GitHub 作为源码真源
 2. 在 GitHub 上打 tag / release
-3. 补齐 package metadata 与最小发布校验
+3. 运行最小检查：`npm run check`、`npm run pack:check`
 4. 再发布到 npm，让 `npx ai-devkit` 成为标准入口
 
 如果短期内只面向少量内部用户，GitHub 直装可以先用；如果要面向公开用户或稳定分发，还是建议补齐 npm 发布链路。
