@@ -1,10 +1,30 @@
 # AI-DevKit
 
-面向 Claude Code 的 skill 工具包，用一个安装器交付两类能力：
+AI-DevKit 是一个面向 Claude Code 的 skill 工具包，用一个安装器交付两类核心能力：
 - `devkit-init`：为项目建立更干净、更适配的 AI 协作环境
 - `devkit-go`：把一句话需求推进成带产物、带验证、可交付的七阶段闭环
 
-同时提供对 Trae CLI 与 Codex CLI 的运行时识别能力，但当前只对 Claude 的全局 skill 安装目录做了明确支持。
+当前分发目标为 **GitHub Packages**。源码和版本继续由 GitHub 仓库管理，包通过 GitHub Packages 的 npm registry 发布。
+
+## 适合谁用
+- 想给新项目或存量项目快速补齐 AI 协作基础设施的工程团队
+- 希望把“一句话需求”推进成结构化实现闭环，而不是只让模型临场发挥的开发者
+- 需要同时兼顾使用者体验与仓库维护成本的 skill / prompt 工程作者
+
+## 当前支持边界
+- 支持通过包内 `bin/install.js` 作为 CLI 入口
+- 支持安装到当前项目 `./.claude/skills/`
+- 支持检测 `Claude Code`、`Trae CLI`、`Codex CLI` 运行时
+- 仅 `Claude Code` 明确支持全局安装到 `~/.claude/skills/`
+- `devkit-init` 与 `devkit-go` 都是 **手动触发 skill**，不会被模型自动调用
+- 当前仓库提供的是 skill、模板与安装器，不负责代替 CI 平台或自动发布系统
+- 因为使用 GitHub Packages，安装与执行通常需要额外的 registry 与 token 配置，体验不同于 npm 官方公开仓库
+
+## 包信息
+- 包名：`@Drizzlezhang/ai-devkit`
+- CLI 命令名：`ai-devkit`
+- 发布 registry：`https://npm.pkg.github.com`
+- 源码仓库：`https://github.com/Drizzlezhang/AI-devKit`
 
 ## 为什么用它
 - **少手工配置**：初始化项目协作环境，而不是每次从零补规则
@@ -12,22 +32,55 @@
 - **过程可追踪**：`devkit-go` 通过 `.specs/` 管理 proposal、requirements、design、tasks、verification
 - **对工作项目友好**：内建字节内部项目的 bytedcli 强制策略
 
+## 使用前提
+在 GitHub Packages 场景下，安装前通常需要准备：
+1. 一个有权访问该包的 GitHub 账号
+2. 一个可用于 Packages 的 GitHub token
+3. 本地 npm registry 配置，指向 GitHub Packages
+
+最小 `.npmrc` 示例：
+```ini
+@Drizzlezhang:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+如果没有这类配置，即使包已经发布，安装和执行也可能失败。
+
 ## 快速开始
 
-### 通过 npx 运行安装器
-```bash
-npx ai-devkit
-```
-
-### 项目级安装到 Claude skills
-```bash
-npx ai-devkit --project --runtime claude
-```
-
-### 本地开发验证
+### 方式 1：本地开发验证
 ```bash
 node bin/install.js --help
 node bin/install.js --project --runtime claude
+```
+
+### 方式 2：从 GitHub Packages 安装
+```bash
+npm install @Drizzlezhang/ai-devkit
+```
+
+### 方式 3：安装后运行 CLI
+```bash
+npx @Drizzlezhang/ai-devkit --project --runtime claude
+```
+
+如果你的环境没有为 GitHub Packages 配好 registry 和 token，请先完成上面的 `.npmrc` 配置。
+
+## 首次使用路径
+1. 配置 GitHub Packages 的 registry 与 token。
+2. 安装 `@Drizzlezhang/ai-devkit`。
+3. 运行安装器，把 skill 安装到当前项目或 Claude 全局 skills 目录。
+4. 在宿主中手动调用 `/devkit-init`，先完成项目扫描、`CLAUDE.md` 方案与安装提案。
+5. 当项目进入具体需求实现时，手动调用 `/devkit-go`，按七阶段闭环推进变更。
+
+如果你只是想快速试用，最小路径是：
+```bash
+npx @Drizzlezhang/ai-devkit --project --runtime claude
+```
+随后在目标项目里手动调用：
+```text
+/devkit-init
+/devkit-go
 ```
 
 ## 命令说明
@@ -43,12 +96,12 @@ node bin/install.js --project --runtime claude
 
 ### 常用示例
 ```bash
-npx ai-devkit --help
-npx ai-devkit --project
-npx ai-devkit --project --runtime claude
-npx ai-devkit --runtime codex --project
-npx ai-devkit --runtime trae --project
-npx ai-devkit --runtime claude --global
+npx @Drizzlezhang/ai-devkit --help
+npx @Drizzlezhang/ai-devkit --project
+npx @Drizzlezhang/ai-devkit --project --runtime claude
+npx @Drizzlezhang/ai-devkit --runtime codex --project
+npx @Drizzlezhang/ai-devkit --runtime trae --project
+npx @Drizzlezhang/ai-devkit --runtime claude --global
 ```
 
 安装脚本 `bin/install.js` 会：
@@ -58,36 +111,26 @@ npx ai-devkit --runtime claude --global
 4. 将 `templates/` 复制到安装后的 `devkit-go` 目录中
 5. 输出安装结果摘要
 
-### 运行时说明
+## 运行时支持说明
 - Claude Code：已明确支持全局安装到 `~/.claude/skills/` 与项目级安装到 `./.claude/skills/`
 - Codex CLI：官方文档确认配置目录为 `~/.codex/config.toml` 与项目级 `.codex/config.toml`；本工程当前只做运行时识别，不声明官方 Claude-style global skills 目录
 - Trae CLI：检测用户级目录 `~/.trae/`；本工程当前只做运行时识别，不声明官方 Claude-style global skills 目录
 
-## 目录结构
-```text
-devkit/
-├── package.json
-├── bin/
-│   └── install.js
-├── skills/
-│   ├── devkit-init/
-│   │   ├── SKILL.md
-│   │   └── docs/
-│   └── devkit-go/
-│       ├── SKILL.md
-│       └── docs/
-├── templates/
-│   ├── CHANGE.md
-│   ├── REQUIREMENT.md
-│   ├── DESIGN.md
-│   ├── TASK.md
-│   ├── VERIFICATION.md
-│   └── _meta.yaml
-├── .gitignore
-├── CLAUDE.md
-├── LICENSE
-└── README.md
-```
+可以把当前支持理解为：
+- **Claude**：识别 + 项目安装 + 全局安装
+- **Codex / Trae**：识别 + 项目级兼容使用
+
+## 安装后你会得到什么
+安装完成后，目标目录下会出现：
+- `devkit-init/`
+  - `SKILL.md`
+  - `docs/*.md`
+- `devkit-go/`
+  - `SKILL.md`
+  - `docs/*.md`
+  - `templates/*`
+
+也就是说，安装器不是只复制一个入口文件，而是把两个 skill 的完整运行上下文一起释放到目标目录。
 
 ## Skill 结构说明
 
@@ -107,23 +150,37 @@ devkit/
 - `docs/state-management.md`：`STATE.md`、`_meta.yaml` 与恢复模式
 - `docs/gates.md`：审核关口与失败处理
 - `docs/stage-*.md`：各阶段的输入、动作、产物与规则
+
 ## 使用后的能力
 
-安装后，宿主中可手动调用：
-- `/devkit-init`
-- `/devkit-go`
-
 ### `/devkit-init`
+适合在下面场景使用：
+- 仓库刚创建，只有一句话需求或几乎没有技术栈信号
+- 已有项目准备补齐 `CLAUDE.md`、skill、plugin、MCP 等协作设施
+- 想先做环境初始化，再进入具体需求实现
+
+它会做的事：
 - 手动触发，不允许模型自动调用
 - 以入口 `SKILL.md` + `docs/` 子文档的方式渐进完成初始化
 - 扫描项目技术栈与已有 AI 配置
 - 对空项目 / 一句话需求场景自动切换到 baseline bootstrap，先给出基础保障安装清单
-- 生成或优化 `CLAUDE.md`
+- 生成新的 `CLAUDE.md`，或在已有 `CLAUDE.md` 基础上提出优化建议
 - 规划并安装必要的 skill / plugin / MCP
 - 对冗余能力做检测与禁用
 - 检测到字节/内部项目时，强制安装 bytedcli CLI + Skill + MCP
 
+它不会做的事：
+- 不会在未确认前直接安装外部能力
+- 不会因为“能装”就批量安装重复能力
+- 不会把空项目 baseline 描述成最终定型方案
+
 ### `/devkit-go`
+适合在下面场景使用：
+- 用户给出一句话需求，希望形成完整 change 产物并推进落地
+- 需要把需求拆成 proposal / requirements / design / tasks / verification
+- 需要按阶段做 gate、恢复、重试和最终交付
+
+它会做的事：
 - 手动触发，不允许模型自动调用
 - 以入口 `SKILL.md` + `docs/` 子文档的方式渐进执行七阶段流程
 - 基于需求复杂度自动裁剪阶段
@@ -131,6 +188,75 @@ devkit/
 - 在 `.specs/` 下管理 proposal / requirements / design / tasks / verification
 - 按验证结果决定是否返回 BUILD 阶段重试
 - 最终生成 conventional commits 风格提交信息并进入 SHIP
+
+它不会做的事：
+- 不会把 `.specs/` 产物写到别处
+- 不会跳过验证直接进入 SHIP
+- 不依赖 GSD，也不安装 flow-kit
+
+## 典型工作流
+
+### 1. 空项目初始化
+```text
+用户只有一句话需求
+→ 安装 ai-devkit
+→ 调用 /devkit-init
+→ 命中 baseline bootstrap
+→ 输出不为空的基础能力安装计划
+→ 用户确认后再安装
+```
+
+### 2. 存量项目补协作设施
+```text
+已有仓库与部分 AI 配置
+→ 调用 /devkit-init
+→ 扫描现有配置与冗余项
+→ 提出 CLAUDE.md 优化与安装计划
+→ 用户确认后执行增量改动
+```
+
+### 3. 需求闭环开发
+```text
+用户给出一个功能需求
+→ 调用 /devkit-go
+→ 创建或恢复一个 change-id
+→ 根据 size 裁剪阶段
+→ 在 .specs/ 下持续产出与验证
+→ 通过 gate 后再进入 ship
+```
+
+### 4. 什么时候选项目级 / 全局安装
+- **项目级安装**：适合当前仓库试用、团队内按 repo 管理能力、或在 Codex / Trae 中兼容使用
+- **全局安装**：适合你已经确定长期在 Claude Code 中复用这两个 skill
+- 如果不确定，优先从 `--project` 开始，影响范围更小
+
+## 目录结构
+```text
+AI-devKit/
+├── package.json
+├── bin/
+│   └── install.js
+├── skills/
+│   ├── devkit-init/
+│   │   ├── SKILL.md
+│   │   └── docs/
+│   └── devkit-go/
+│       ├── SKILL.md
+│       └── docs/
+├── templates/
+│   ├── CHANGE.md
+│   ├── REQUIREMENT.md
+│   ├── DESIGN.md
+│   ├── TASK.md
+│   ├── VERIFICATION.md
+│   └── _meta.yaml
+├── .gitignore
+├── .claude/
+│   └── settings.json
+├── CLAUDE.md
+├── LICENSE
+└── README.md
+```
 
 ## 模板产物
 `devkit-go` 使用 `templates/` 中的模板创建以下文件：
@@ -141,50 +267,52 @@ devkit/
 - `verification.md`
 - `_meta.yaml`
 
+这些产物会存放在：
+```text
+.specs/<change-id>/
+```
+
 ## 开发说明
 - 安装脚本只使用 Node.js 内置模块
 - `SKILL.md` 应保持“入口 + docs 子文档”结构，避免把所有规则堆在单文件中
 - 两个 skill 的 frontmatter 必须始终包含 `trigger: manual`
+- 修改安装行为后，至少重新验证一次 `node bin/install.js --help`
+- 修改 README 或包元数据时，应与 `package.json`、`bin/install.js`、`skills/*/SKILL.md` 同步核对
 
-## 发布与分发建议
+### 常用检查命令
+```bash
+npm run check
+npm run pack:check
+```
 
-### 当前状态
-当前仓库已经适合继续通过 GitHub 维护源码与版本历史，但**还不算完整的 npm 发布形态**。
+## 发布到 GitHub Packages
 
-### 现在已经具备的条件
-- 有合法的 npm 包名：`ai-devkit`
-- 有 `bin` 入口：`ai-devkit`
-- 有可运行的安装脚本：`bin/install.js`
-- 有 `files` 白名单，能控制打包内容
-- 已补 `repository` / `homepage` / `bugs` / `author` 等基础 metadata
-- 已补最小发布检查脚本：`npm run check`、`npm run pack:check`
-- 已经可以通过 GitHub 仓库管理源码、issue、release 与 tag
+### 发布前需要具备
+- GitHub 仓库写权限
+- 可用于 Packages 发布的 GitHub token
+- 本地 npm 已配置 GitHub Packages registry
 
-### 还缺的关键项
-如果你要稳定支持 `npm install -g ai-devkit` 或 `npx ai-devkit`，建议继续补这些：
-- 发布前版本管理策略（tag / release / changelog）
-- 至少一次真实 `npm pack` 或试发布验证，确认最终 tarball 内容正确
-- 最好补一个最小 CI，至少跑 `node bin/install.js --help`
-- 如果准备公开发布，再补 npm 账号、包名占用确认与 release 流程
+### 最小发布配置
+可以在用户级 `.npmrc` 或项目级配置中加入：
+```ini
+@Drizzlezhang:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
 
-### 关于“npm 或 npx 也用 GitHub 管理”
-可以，但要分清两层：
-- **源码与版本**：完全可以用 GitHub 管理，这是当前推荐路径
-- **命令分发**：
-  - 如果你想让用户直接运行 `npx ai-devkit`，最稳的是发布到 npm registry
-  - 如果你暂时不发 npm，也可以让用户用 GitHub 直接运行，比如：
-    - `npx github:Drizzlezhang/AI-devKit`
-    - 或 `npm install git@github.com:Drizzlezhang/AI-devKit.git`
+### 建议发布顺序
+1. 更新 `package.json` 版本号
+2. 运行 `npm run check`
+3. 运行 `npm run pack:check`
+4. 确认 tarball 内容正确
+5. 确认 GitHub token、scope 与 registry 指向正确
+6. 执行：
+   ```bash
+   npm publish
+   ```
 
-但要注意：**GitHub 直装更适合内部试用或早期验证，不如 npm registry 稳定**，因为：
-- 版本解析与缓存体验较弱
-- 首次安装更依赖 git / ssh 环境
-- 对外用户的使用门槛更高
+### 使用侧注意事项
+- GitHub Packages 不等于 npm 官方公开仓库
+- 安装与执行通常依赖 `.npmrc` 和 token
+- `npx @Drizzlezhang/ai-devkit` 是否可直接使用，取决于本地是否已正确配置对应 registry 与认证
 
-### 推荐发布路径
-1. 继续用 GitHub 作为源码真源
-2. 在 GitHub 上打 tag / release
-3. 运行最小检查：`npm run check`、`npm run pack:check`
-4. 再发布到 npm，让 `npx ai-devkit` 成为标准入口
-
-如果短期内只面向少量内部用户，GitHub 直装可以先用；如果要面向公开用户或稳定分发，还是建议补齐 npm 发布链路。
+如果你的目标是无认证、公开、直接分发给外部用户，GitHub Packages 通常不如 npm 官方仓库合适。
