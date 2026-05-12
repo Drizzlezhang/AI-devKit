@@ -31,3 +31,13 @@
 - `templates/TASK.md` → `.specs/<change-id>/tasks.md`
 - `templates/VERIFICATION.md` → `.specs/<change-id>/verification.md`
 - `templates/_meta.yaml` → `.specs/<change-id>/_meta.yaml`
+
+## 阶段推进模板
+进入任一阶段前，你都应该用统一格式简要说明：
+- `change-id`：...
+- `size`：...
+- `current_stage`：...
+- `next_action`：...
+- `read_docs`：[`docs/...`]
+
+如果阶段被跳过，也必须明确说明跳过原因，而不是静默省略。

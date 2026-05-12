@@ -17,7 +17,27 @@ node bin/install.js --help
 node bin/install.js --project --runtime claude
 ```
 
-## 安装器行为
+## 命令说明
+
+### CLI 命令
+- `ai-devkit`
+
+### 参数
+- `--help` / `-h`：显示帮助
+- `--global`：安装到已验证的全局 skills 目录；当前仅 Claude 支持
+- `--project`：安装到当前项目的 `./.claude/skills`
+- `--runtime <name>`：强制指定运行时，可选 `claude` / `trae` / `codex`
+
+### 常用示例
+```bash
+npx ai-devkit --help
+npx ai-devkit --project
+npx ai-devkit --project --runtime claude
+npx ai-devkit --runtime codex --project
+npx ai-devkit --runtime trae --project
+npx ai-devkit --runtime claude --global
+```
+
 安装脚本 `bin/install.js` 会：
 1. 检测当前环境更接近 Claude Code、Trae CLI 还是 Codex CLI
 2. 让用户选择全局安装或项目级安装
@@ -56,7 +76,24 @@ devkit/
 └── README.md
 ```
 
-## Skills
+## Skill 结构说明
+
+### `devkit-init`
+- `SKILL.md`：入口、边界、路由规则
+- `docs/project-analysis.md`：项目扫描与摘要输出
+- `docs/claude-md-strategy.md`：`CLAUDE.md` 生成/优化策略
+- `docs/install-planning.md`：安装项规划与确认要求
+- `docs/redundancy-policy.md`：冗余检测与禁用原则
+- `docs/bytedcli-policy.md`：字节内部项目强制 bytedcli 规则
+
+### `devkit-go`
+- `SKILL.md`：入口、阶段路由、总执行约束
+- `docs/workflow-overview.md`：总流程、模板映射、阶段推进模板
+- `docs/size-routing.md`：Size 推断、阶段序列与切换要求
+- `docs/state-management.md`：`STATE.md`、`_meta.yaml` 与恢复模式
+- `docs/gates.md`：审核关口与失败处理
+- `docs/stage-*.md`：各阶段的输入、动作、产物与规则
+
 
 ### `/devkit-init`
 - 手动触发，不允许模型自动调用
@@ -71,6 +108,7 @@ devkit/
 - 手动触发，不允许模型自动调用
 - 以入口 `SKILL.md` + `docs/` 子文档的方式渐进执行七阶段流程
 - 基于需求复杂度自动裁剪阶段
+- 通过 `docs/size-routing.md` 决定阶段序列，并在每次切换时显式说明读取文档与跳转原因
 - 在 `.specs/` 下管理 proposal / requirements / design / tasks / verification
 - 按验证结果决定是否返回 BUILD 阶段重试
 - 最终生成 conventional commits 风格提交信息并进入 SHIP

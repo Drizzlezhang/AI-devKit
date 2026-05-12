@@ -30,6 +30,7 @@ trigger: manual
 - 进入 5-VERIFY 前读取：`docs/stage-5-verify.md`
 - 进入 6-SHIP 前读取：`docs/stage-6-ship.md`
 - 需要暂停审核或失败处理时读取：`docs/gates.md`
+- 每次阶段切换都要遵循 `docs/workflow-overview.md` 中的阶段推进模板与 `docs/size-routing.md` 中的路由规则
 
 # 执行规则
 1. 每次调用都必须有且仅有一个活跃 `change-id`。
