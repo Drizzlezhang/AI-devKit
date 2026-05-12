@@ -6,3 +6,5 @@ status: "active"
 created_at: ""
 updated_at: ""
 retry_count: 0
+last_verified_at: ""
+last_context_mode: "fresh"
