@@ -15,7 +15,8 @@ AI-DevKit 是一个面向 Claude Code 的 skill 工具包，用一个安装器�
 - 支持通过包内 `bin/install.js` 作为 CLI 入口
 - 支持安装到当前项目 `./.claude/skills/`
 - 支持检测 `Claude Code`、`Trae CLI`、`Codex CLI` 运行时
-- 仅 `Claude Code` 明确支持全局安装到 `~/.claude/skills/`
+- `Claude Code` 是当前唯一明确完成项目安装 + 全局安装闭环验证的宿主
+- `Trae CLI` 与 `Codex CLI` 当前属于**实验性兼容 / 预留支持**：做运行时识别，并保留项目级兼容扩展基础，但不声明已具备 Claude 同等级别的全局 skills / MCP 集成能力
 - `devkit-init` 与 `devkit-go` 都是 **手动触发 skill**，不会被模型自动调用
 - 当前仓库提供的是 skill、模板与安装器，不负责代替 CI 平台或自动发布系统
 - 因为使用 GitHub Packages，安装与执行通常需要额外的 registry 与 token 配置，体验不同于 npm 官方公开仓库
@@ -59,12 +60,13 @@ node bin/install.js --project --runtime claude
 npm install @Drizzlezhang/ai-devkit
 ```
 
-### 方式 3：安装后运行 CLI
+### 方式 3：安装后运行 CLI（已验证主路径）
 ```bash
-npx @Drizzlezhang/ai-devkit --project --runtime claude
+./node_modules/.bin/ai-devkit --project --runtime claude
 ```
 
 如果你的环境没有为 GitHub Packages 配好 registry 和 token，请先完成上面的 `.npmrc` 配置。
+如果要直接使用 `npx @Drizzlezhang/ai-devkit ...`，仍依赖本地 registry 与认证环境，当前文档不把它作为默认验证链路。
 
 ## 首次使用路径
 1. 配置 GitHub Packages 的 registry 与 token。
@@ -75,7 +77,8 @@ npx @Drizzlezhang/ai-devkit --project --runtime claude
 
 如果你只是想快速试用，最小路径是：
 ```bash
-npx @Drizzlezhang/ai-devkit --project --runtime claude
+npm install @Drizzlezhang/ai-devkit
+./node_modules/.bin/ai-devkit --project --runtime claude
 ```
 随后在目标项目里手动调用：
 ```text
@@ -96,12 +99,13 @@ npx @Drizzlezhang/ai-devkit --project --runtime claude
 
 ### 常用示例
 ```bash
-npx @Drizzlezhang/ai-devkit --help
-npx @Drizzlezhang/ai-devkit --project
-npx @Drizzlezhang/ai-devkit --project --runtime claude
-npx @Drizzlezhang/ai-devkit --runtime codex --project
-npx @Drizzlezhang/ai-devkit --runtime trae --project
-npx @Drizzlezhang/ai-devkit --runtime claude --global
+node bin/install.js --help
+./node_modules/.bin/ai-devkit --help
+./node_modules/.bin/ai-devkit --project
+./node_modules/.bin/ai-devkit --project --runtime claude
+./node_modules/.bin/ai-devkit --runtime codex --project
+./node_modules/.bin/ai-devkit --runtime trae --project
+./node_modules/.bin/ai-devkit --runtime claude --global
 ```
 
 安装脚本 `bin/install.js` 会：
@@ -112,13 +116,13 @@ npx @Drizzlezhang/ai-devkit --runtime claude --global
 5. 输出安装结果摘要
 
 ## 运行时支持说明
-- Claude Code：已明确支持全局安装到 `~/.claude/skills/` 与项目级安装到 `./.claude/skills/`
-- Codex CLI：官方文档确认配置目录为 `~/.codex/config.toml` 与项目级 `.codex/config.toml`；本工程当前只做运行时识别，不声明官方 Claude-style global skills 目录
-- Trae CLI：检测用户级目录 `~/.trae/`；本工程当前只做运行时识别，不声明官方 Claude-style global skills 目录
+- Claude Code：已明确支持全局安装到 `~/.claude/skills/` 与项目级安装到 `./.claude/skills/`，也是当前唯一完成完整安装闭环验证的目标宿主
+- Codex CLI：官方文档确认配置目录为 `~/.codex/config.toml` 与项目级 `.codex/config.toml`；本工程当前只做运行时识别与项目级兼容预留，不声明官方 Claude-style global skills 目录，也不声明完整 MCP 闭环已验证
+- Trae CLI：检测用户级目录 `~/.trae/`；本工程当前只做运行时识别与项目级兼容预留，不声明官方 Claude-style global skills 目录，也不声明完整 MCP 闭环已验证
 
 可以把当前支持理解为：
-- **Claude**：识别 + 项目安装 + 全局安装
-- **Codex / Trae**：识别 + 项目级兼容使用
+- **Claude**：识别 + 项目安装 + 全局安装 + 已验证主路径
+- **Codex / Trae**：识别 + 实验性项目级兼容预留
 
 ## 安装后你会得到什么
 安装完成后，目标目录下会出现：
@@ -141,7 +145,7 @@ npx @Drizzlezhang/ai-devkit --runtime claude --global
 - `docs/install-planning.md`：安装项规划、确认要求与空项目兜底规则
 - `docs/baseline-bootstrap.md`：空项目 / 一句话需求场景下的基础保障模式
 - `docs/redundancy-policy.md`：冗余检测与禁用原则
-- `docs/bytedcli-policy.md`：字节内部项目强制 bytedcli 规则
+- `docs/bytedcli-policy.md`：字节内部项目强弱信号判定与 bytedcli 安装策略
 
 ### `devkit-go`
 - `SKILL.md`：入口、阶段路由、总执行约束
@@ -167,7 +171,7 @@ npx @Drizzlezhang/ai-devkit --runtime claude --global
 - 生成新的 `CLAUDE.md`，或在已有 `CLAUDE.md` 基础上提出优化建议
 - 规划并安装必要的 skill / plugin / MCP
 - 对冗余能力做检测与禁用
-- 检测到字节/内部项目时，强制安装 bytedcli CLI + Skill + MCP
+- 检测到字节/内部项目时，按强弱信号决定是否强制安装 bytedcli CLI + Skill + MCP
 
 它不会做的事：
 - 不会在未确认前直接安装外部能力
