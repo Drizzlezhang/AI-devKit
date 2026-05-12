@@ -93,9 +93,10 @@ devkit/
 
 ### `devkit-init`
 - `SKILL.md`：入口、边界、路由规则
-- `docs/project-analysis.md`：项目扫描与摘要输出
+- `docs/project-analysis.md`：项目扫描、空项目判断与摘要输出
 - `docs/claude-md-strategy.md`：`CLAUDE.md` 生成/优化策略
-- `docs/install-planning.md`：安装项规划与确认要求
+- `docs/install-planning.md`：安装项规划、确认要求与空项目兜底规则
+- `docs/baseline-bootstrap.md`：空项目 / 一句话需求场景下的基础保障模式
 - `docs/redundancy-policy.md`：冗余检测与禁用原则
 - `docs/bytedcli-policy.md`：字节内部项目强制 bytedcli 规则
 

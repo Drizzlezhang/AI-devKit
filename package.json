@@ -1,11 +1,24 @@
 {
   "name": "ai-devkit",
   "version": "0.1.0",
-  "description": "Intelligent dev environment initializer and spec-driven workflow for Claude Code, with Trae CLI and Codex CLI runtime detection support",
+  "description": "Intelligent Claude Code skill installer and spec-driven workflow toolkit with Trae CLI and Codex CLI runtime detection",
   "bin": {
     "ai-devkit": "./bin/install.js"
   },
   "keywords": ["claude-code", "skill", "devkit", "spec-driven", "workflow"],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Drizzlezhang/AI-devKit.git"
+  },
+  "homepage": "https://github.com/Drizzlezhang/AI-devKit#readme",
+  "bugs": {
+    "url": "https://github.com/Drizzlezhang/AI-devKit/issues"
+  },
+  "author": "Drizzlezhang",
   "license": "MIT",
-  "files": ["bin/", "skills/", "templates/", "README.md", "LICENSE"]
+  "files": ["bin/", "skills/", "templates/", "README.md", "LICENSE"],
+  "scripts": {
+    "check": "node ./bin/install.js --help",
+    "pack:check": "npm pack --dry-run"
+  }
 }
