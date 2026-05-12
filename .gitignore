@@ -1,6 +1,8 @@
 node_modules/
 .DS_Store
 .specs/
+.claude/settings.local.json
+.claude/skills/
 *.log
 npm-debug.log*
 yarn-debug.log*
