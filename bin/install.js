@@ -31,11 +31,11 @@ const RUNTIMES = {
 };
 
 function printHelp() {
-  console.log(`devkit-cc installer
+  console.log(`ai-devkit installer
 
 Usage:
   node bin/install.js [options]
-  npx devkit-cc [options]
+  npx ai-devkit [options]
 
 Options:
   --help              Show this help message
@@ -46,7 +46,7 @@ Options:
 What this installer does:
   - Detects Claude Code, Trae CLI, or Codex CLI from local config directories
   - Asks whether to install globally or into the current project
-  - Copies devkit-init and devkit-go skills into the target skills directory
+  - Copies devkit-init and devkit-go skills, including their docs, into the target skills directory
   - Copies templates/ into the installed devkit-go skill directory
 
 Runtime notes:
@@ -221,12 +221,8 @@ function copyDirectory(sourceDir, targetDir, copied = []) {
 function installSkill(skillName, targetSkillsDir, copiedFiles) {
   const sourceDir = path.join(SKILLS_SOURCE, skillName);
   const targetDir = path.join(targetSkillsDir, skillName);
-  ensureDirectory(targetDir);
 
-  const sourceSkillFile = path.join(sourceDir, 'SKILL.md');
-  const targetSkillFile = path.join(targetDir, 'SKILL.md');
-  copyFile(sourceSkillFile, targetSkillFile);
-  copiedFiles.push(targetSkillFile);
+  copyDirectory(sourceDir, targetDir, copiedFiles);
 
   if (skillName === 'devkit-go') {
     const targetTemplatesDir = path.join(targetDir, 'templates');
@@ -261,7 +257,7 @@ async function main() {
   installSkill('devkit-init', targetSkillsDir, copiedFiles);
   installSkill('devkit-go', targetSkillsDir, copiedFiles);
 
-  console.log('devkit-cc installation complete.');
+  console.log('ai-devkit installation complete.');
   console.log(`Runtime: ${runtimeSelection.runtime.label}`);
   console.log(`Detection: ${runtimeSelection.note}`);
   console.log(`Scope: ${scope}`);

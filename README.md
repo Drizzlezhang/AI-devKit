@@ -1,14 +1,14 @@
 # AI-devKit
 
 AI-devKit 是一个面向 Claude Code 的 skill 工程，并为 Trae CLI / Codex CLI 提供运行时识别与兼容扩展基础。它提供两个手动触发的核心 skill：
-- `devkit-init`：项目开发环境智能初始化
-- `devkit-go`：七阶段需求闭环开发
+- `devkit-init`：项目开发环境智能初始化（入口 + 子文档）
+- `devkit-go`：七阶段需求闭环开发（入口 + 子文档）
 
 ## 安装
 
 ### 通过 npx 运行安装器
 ```bash
-npx devkit-cc
+npx ai-devkit
 ```
 
 ### 本地开发验证
@@ -21,7 +21,7 @@ node bin/install.js --project --runtime claude
 安装脚本 `bin/install.js` 会：
 1. 检测当前环境更接近 Claude Code、Trae CLI 还是 Codex CLI
 2. 让用户选择全局安装或项目级安装
-3. 复制 `devkit-init` 与 `devkit-go` 的 `SKILL.md`
+3. 复制 `devkit-init` 与 `devkit-go` 的入口 `SKILL.md` 及其 `docs/` 子文档
 4. 将 `templates/` 复制到安装后的 `devkit-go` 目录中
 5. 输出安装结果摘要
 
@@ -38,9 +38,11 @@ devkit/
 │   └── install.js
 ├── skills/
 │   ├── devkit-init/
-│   │   └── SKILL.md
+│   │   ├── SKILL.md
+│   │   └── docs/
 │   └── devkit-go/
-│       └── SKILL.md
+│       ├── SKILL.md
+│       └── docs/
 ├── templates/
 │   ├── CHANGE.md
 │   ├── REQUIREMENT.md
@@ -58,6 +60,7 @@ devkit/
 
 ### `/devkit-init`
 - 手动触发，不允许模型自动调用
+- 以入口 `SKILL.md` + `docs/` 子文档的方式渐进完成初始化
 - 扫描项目技术栈与已有 AI 配置
 - 生成或优化 `CLAUDE.md`
 - 规划并安装必要的 skill / plugin / MCP
@@ -66,6 +69,7 @@ devkit/
 
 ### `/devkit-go`
 - 手动触发，不允许模型自动调用
+- 以入口 `SKILL.md` + `docs/` 子文档的方式渐进执行七阶段流程
 - 基于需求复杂度自动裁剪阶段
 - 在 `.specs/` 下管理 proposal / requirements / design / tasks / verification
 - 按验证结果决定是否返回 BUILD 阶段重试
@@ -82,7 +86,7 @@ devkit/
 
 ## 开发说明
 - 安装脚本只使用 Node.js 内置模块
-- `SKILL.md` 必须保持完整可用 prompt，不使用占位符
+- `SKILL.md` 应保持“入口 + docs 子文档”结构，避免把所有规则堆在单文件中
 - 两个 skill 的 frontmatter 必须始终包含 `trigger: manual`
 
 ## 发布
