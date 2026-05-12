@@ -1,6 +1,6 @@
 # AI-devKit
 
-AI-devKit 是一个可通过 `npx` 或 `npm` 安装到 Claude Code / Trae CLI / Code CLI 的 skill 包，提供两个手动触发的核心 skill：
+AI-devKit 是一个面向 Claude Code 的 skill 工程，并为 Trae CLI / Codex CLI 提供运行时识别与兼容扩展基础。它提供两个手动触发的核心 skill：
 - `devkit-init`：项目开发环境智能初始化
 - `devkit-go`：七阶段需求闭环开发
 
@@ -19,11 +19,16 @@ node bin/install.js --project --runtime claude
 
 ## 安装器行为
 安装脚本 `bin/install.js` 会：
-1. 检测当前环境更接近 Claude Code、Trae CLI 还是 Code CLI
+1. 检测当前环境更接近 Claude Code、Trae CLI 还是 Codex CLI
 2. 让用户选择全局安装或项目级安装
 3. 复制 `devkit-init` 与 `devkit-go` 的 `SKILL.md`
 4. 将 `templates/` 复制到安装后的 `devkit-go` 目录中
 5. 输出安装结果摘要
+
+### 运行时说明
+- Claude Code：已明确支持全局安装到 `~/.claude/skills/` 与项目级安装到 `./.claude/skills/`
+- Codex CLI：官方文档确认配置目录为 `~/.codex/config.toml` 与项目级 `.codex/config.toml`；本工程当前只做运行时识别，不声明官方 Claude-style global skills 目录
+- Trae CLI：检测用户级目录 `~/.trae/`；本工程当前只做运行时识别，不声明官方 Claude-style global skills 目录
 
 ## 目录结构
 ```text

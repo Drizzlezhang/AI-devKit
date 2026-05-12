@@ -1,7 +1,7 @@
 # AI-devKit
 
 ## 工程简介
-AI-devKit 是一个可通过 `npx` 或 `npm` 安装的 skill 工程，面向 Claude Code、Trae CLI 与 Code CLI。它提供两个手动触发的核心 skill：
+AI-devKit 是一个可通过 `npx` 或 `npm` 安装的 skill 工程，面向 Claude Code，并为 Trae CLI 与 Codex CLI 提供运行时识别与兼容扩展基础。它提供两个手动触发的核心 skill：
 - `devkit-init`：为项目初始化或优化 AI 协作环境
 - `devkit-go`：用七阶段闭环流程推进需求实现、验证与交付
 

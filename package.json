@@ -1,7 +1,7 @@
 {
   "name": "devkit-cc",
   "version": "0.1.0",
-  "description": "Intelligent dev environment initializer and spec-driven development workflow for Claude Code / Trae CLI / Code CLI",
+  "description": "Intelligent dev environment initializer and spec-driven workflow for Claude Code, with Trae CLI and Codex CLI runtime detection support",
   "bin": {
     "devkit-cc": "./bin/install.js"
   },

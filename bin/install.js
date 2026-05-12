@@ -14,16 +14,19 @@ const RUNTIMES = {
     label: 'Claude Code',
     configDir: path.join(os.homedir(), '.claude'),
     globalSkillsDir: path.join(os.homedir(), '.claude', 'skills'),
+    supportsSkillInstall: true,
   },
   trae: {
     label: 'Trae CLI',
     configDir: path.join(os.homedir(), '.trae'),
-    globalSkillsDir: path.join(os.homedir(), '.trae', 'skills'),
+    globalSkillsDir: null,
+    supportsSkillInstall: false,
   },
-  code: {
-    label: 'Code CLI',
-    configDir: path.join(os.homedir(), '.code'),
-    globalSkillsDir: path.join(os.homedir(), '.code', 'skills'),
+  codex: {
+    label: 'Codex CLI',
+    configDir: path.join(os.homedir(), '.codex'),
+    globalSkillsDir: null,
+    supportsSkillInstall: false,
   },
 };
 
@@ -36,15 +39,20 @@ Usage:
 
 Options:
   --help              Show this help message
-  --global            Install into the runtime's global skills directory
+  --global            Install into the verified global skills directory for the selected runtime
   --project           Install into the current project's .claude/skills directory
-  --runtime <name>    Force runtime: claude | trae | code
+  --runtime <name>    Force runtime: claude | trae | codex
 
 What this installer does:
-  - Detects Claude Code, Trae CLI, or Code CLI from local config directories
+  - Detects Claude Code, Trae CLI, or Codex CLI from local config directories
   - Asks whether to install globally or into the current project
   - Copies devkit-init and devkit-go skills into the target skills directory
   - Copies templates/ into the installed devkit-go skill directory
+
+Runtime notes:
+  - Claude Code uses ~/.claude/skills for global skill installation
+  - Codex CLI is detected via ~/.codex/config.toml and project .codex/config.toml, but Claude-style global skill installation is not defined here
+  - Trae CLI is detected via ~/.trae, but its official global skill directory is not asserted by this installer
 `);
 }
 
@@ -163,7 +171,7 @@ async function chooseScope(explicitScope) {
     while (true) {
       const answer = (await askQuestion(
         rl,
-        'Select install scope: [1] Global (~ runtime skills) [2] Project (./.claude/skills) > '
+        'Select install scope: [1] Global (Claude only) [2] Project (./.claude/skills) > '
       )).toLowerCase();
 
       if (answer === '1' || answer === 'global' || answer === 'g') {
@@ -240,6 +248,12 @@ async function main() {
   const targetSkillsDir = scope === 'global'
     ? runtimeSelection.runtime.globalSkillsDir
     : path.join(process.cwd(), '.claude', 'skills');
+
+  if (scope === 'global' && !runtimeSelection.runtime.supportsSkillInstall) {
+    throw new Error(
+      `${runtimeSelection.runtime.label} does not have a verified Claude-style global skills directory. Use --project, or extend the installer with a runtime-specific integration.`
+    );
+  }
 
   ensureDirectory(targetSkillsDir);
 
