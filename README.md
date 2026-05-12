@@ -1,14 +1,27 @@
-# AI-devKit
+# AI-DevKit
 
-AI-devKit 是一个面向 Claude Code 的 skill 工程，并为 Trae CLI / Codex CLI 提供运行时识别与兼容扩展基础。它提供两个手动触发的核心 skill：
-- `devkit-init`：项目开发环境智能初始化（入口 + 子文档）
-- `devkit-go`：七阶段需求闭环开发（入口 + 子文档）
+面向 Claude Code 的 skill 工具包，用一个安装器交付两类能力：
+- `devkit-init`：为项目建立更干净、更适配的 AI 协作环境
+- `devkit-go`：把一句话需求推进成带产物、带验证、可交付的七阶段闭环
 
-## 安装
+同时提供对 Trae CLI 与 Codex CLI 的运行时识别能力，但当前只对 Claude 的全局 skill 安装目录做了明确支持。
+
+## 为什么用它
+- **少手工配置**：初始化项目协作环境，而不是每次从零补规则
+- **少上下文浪费**：skill 采用入口 + 子文档结构，避免超大单文件 prompt
+- **过程可追踪**：`devkit-go` 通过 `.specs/` 管理 proposal、requirements、design、tasks、verification
+- **对工作项目友好**：内建字节内部项目的 bytedcli 强制策略
+
+## 快速开始
 
 ### 通过 npx 运行安装器
 ```bash
 npx ai-devkit
+```
+
+### 项目级安装到 Claude skills
+```bash
+npx ai-devkit --project --runtime claude
 ```
 
 ### 本地开发验证
@@ -93,7 +106,11 @@ devkit/
 - `docs/state-management.md`：`STATE.md`、`_meta.yaml` 与恢复模式
 - `docs/gates.md`：审核关口与失败处理
 - `docs/stage-*.md`：各阶段的输入、动作、产物与规则
+## 使用后的能力
 
+安装后，宿主中可手动调用：
+- `/devkit-init`
+- `/devkit-go`
 
 ### `/devkit-init`
 - 手动触发，不允许模型自动调用
@@ -127,8 +144,44 @@ devkit/
 - `SKILL.md` 应保持“入口 + docs 子文档”结构，避免把所有规则堆在单文件中
 - 两个 skill 的 frontmatter 必须始终包含 `trigger: manual`
 
-## 发布
-1. 运行 `node bin/install.js --help`
-2. 检查 skill 与模板内容
-3. 提交变更
-4. 发布 npm 包或通过 `npx` 安装验证
+## 发布与分发建议
+
+### 当前状态
+当前仓库已经适合继续通过 GitHub 维护源码与版本历史，但**还不算完整的 npm 发布形态**。
+
+### 现在已经具备的条件
+- 有合法的 npm 包名：`ai-devkit`
+- 有 `bin` 入口：`ai-devkit`
+- 有可运行的安装脚本：`bin/install.js`
+- 有 `files` 白名单，能控制打包内容
+- 已经可以通过 GitHub 仓库管理源码、issue、release 与 tag
+
+### 还缺的关键项
+如果你要稳定支持 `npm install -g ai-devkit` 或 `npx ai-devkit`，建议继续补这些：
+- `package.json` 中的 `repository` / `homepage` / `bugs`
+- `author` 与更完整的 package metadata
+- 发布前版本管理策略（tag / release / changelog）
+- 至少一次 `npm pack` 验证，确认最终 tarball 内容正确
+- 最好补一个最小 CI，至少跑 `node bin/install.js --help`
+
+### 关于“npm 或 npx 也用 GitHub 管理”
+可以，但要分清两层：
+- **源码与版本**：完全可以用 GitHub 管理，这是当前推荐路径
+- **命令分发**：
+  - 如果你想让用户直接运行 `npx ai-devkit`，最稳的是发布到 npm registry
+  - 如果你暂时不发 npm，也可以让用户用 GitHub 直接运行，比如：
+    - `npx github:Drizzlezhang/AI-devKit`
+    - 或 `npm install git@github.com:Drizzlezhang/AI-devKit.git`
+
+但要注意：**GitHub 直装更适合内部试用或早期验证，不如 npm registry 稳定**，因为：
+- 版本解析与缓存体验较弱
+- 首次安装更依赖 git / ssh 环境
+- 对外用户的使用门槛更高
+
+### 推荐发布路径
+1. 继续用 GitHub 作为源码真源
+2. 在 GitHub 上打 tag / release
+3. 补齐 package metadata 与最小发布校验
+4. 再发布到 npm，让 `npx ai-devkit` 成为标准入口
+
+如果短期内只面向少量内部用户，GitHub 直装可以先用；如果要面向公开用户或稳定分发，还是建议补齐 npm 发布链路。
