@@ -1,0 +1,11 @@
+{
+  "name": "devkit-cc",
+  "version": "0.1.0",
+  "description": "Intelligent dev environment initializer and spec-driven development workflow for Claude Code / Trae CLI / Code CLI",
+  "bin": {
+    "devkit-cc": "./bin/install.js"
+  },
+  "keywords": ["claude-code", "skill", "devkit", "spec-driven", "workflow"],
+  "license": "MIT",
+  "files": ["bin/", "skills/", "templates/", "README.md", "LICENSE"]
+}
