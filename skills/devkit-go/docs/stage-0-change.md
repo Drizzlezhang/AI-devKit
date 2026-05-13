@@ -11,11 +11,9 @@
 - 推断 `Size`
 - 创建 `.specs/<change-id>/proposal.md`
 
-## 产物要求
-`proposal.md` 必须参考 `templates/CHANGE.md` 结构，至少包含：
-- 概述
-- 动机
-- 影响范围
-- 验收目标
-- `Size`
-- 推断依据
+## 退出检查清单
+- [ ] `proposal.md` 已创建且包含 Size 与推断依据
+- [ ] 根级 `.specs/STATE.md` 已指向当前 change
+- [ ] change 级 `.specs/<change-id>/STATE.md` 已按 `templates/STATE.md` 创建
+- [ ] `_meta.yaml.current_stage` 已更新
+- [ ] `STATE.md.Recent Changes` 已 append 本阶段摘要

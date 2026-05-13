@@ -1,6 +1,6 @@
 # 4-BUILD — 编码实现
 
-本阶段消费上游产物时，必须沿用 `_meta.yaml.size` 对模板分段的渲染结果；若检测到分段裁剪失败，回退完整模板并显式记录 warning。
+渲染规则见 `bin/render-template.js`；阶段切换输出形式见 `docs/workflow-overview.md` 的“阶段切换仪式”。
 
 ## 输入
 - 默认读取 `tasks.md`
@@ -34,6 +34,15 @@
 4. 每完成一个任务立即执行对应 verify 命令，不要把验证堆到最后。
 5. 如果用户中途改变目标，要先更新 proposal / requirements / design / tasks，再继续实现。
 6. XS/S 若命中快速路径，也不能跳过最终 VERIFY，只能压缩前置阶段。
+
+## 退出检查清单
+- [ ] 代码变更已完成且相关任务状态已更新
+- [ ] `_meta.yaml.current_stage` 已更新
+- [ ] `.specs/STATE.md` 与当前 change 同步
+- [ ] `_meta.yaml.last_next` 已更新
+- [ ] `_meta.yaml.last_progress_note` 已更新
+- [ ] `_meta.yaml.schema_version == 2`
+- [ ] `STATE.md.Recent Changes` 已 append 本阶段摘要
 
 ## 产物要求
 - 代码变更

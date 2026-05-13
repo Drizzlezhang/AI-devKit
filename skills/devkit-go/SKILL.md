@@ -18,9 +18,10 @@ trigger: manual
 
 # 启动时必读
 1. `.devkit/project.yaml`（若存在）
-2. `docs/workflow-overview.md`
-3. `docs/size-routing.md`
-4. `docs/state-management.md`
+2. `.specs/<change-id>/_meta.yaml`（恢复已有 change 时优先读取；若不存在则跳过）
+3. `docs/workflow-overview.md`
+4. `docs/size-routing.md`
+5. `docs/state-management.md`
 
 # 按阶段读取规则
 - 进入 0-CHANGE 前读取：`docs/stage-0-change.md`
@@ -30,7 +31,7 @@ trigger: manual
 - 进入 4-BUILD 前读取：`docs/stage-4-build.md`
 - 进入 5-VERIFY 前读取：`docs/stage-5-verify.md`；XS 的 `5-lite` 也使用同一文档中的轻量验证模式
 - 进入 6-SHIP 前读取：`docs/stage-6-ship.md`
-- 需要暂停审核、`pre-commit`、`partial-pass` 或失败处理时读取：`docs/gates.md`
+- 需要暂停审核、`pre-commit`、`partial-pass`、`retry-limit` 或失败处理时读取：`docs/gates.md`
 - 每次阶段切换都要遵循 `docs/workflow-overview.md` 中的阶段推进模板与 `docs/size-routing.md` 中的路由规则
 
 # 执行规则
@@ -46,10 +47,12 @@ trigger: manual
 10. 不把 `.specs/` 产物写到别处。
 11. 不跳过验证直接进入 SHIP。
 12. 输出时默认遵循 `docs/workflow-overview.md` 的 Context Budget 与 TL;DR 约定。
+13. SPEC 阶段必须为每条 AC 写出对应验证方式；VERIFY 阶段必须按该验证方式执行，不得临时发明新的验证口径。
+14. Gate 密度必须按 Size 控制：XS/S 只保留必要 gate，M 默认只强制 `post-spec` 与 `pre-commit`，L 保持完整 gate。
 
 # 执行流程
 1. 启动后先读取总览、复杂度裁剪与状态管理规则。
 2. 判断是“新 change”还是“恢复已有 change”。
 3. 根据 Size 决定阶段序列，并在进入每个阶段前读取对应子文档。
-4. 在需要 gate、失败重试或 review 时，按 `docs/gates.md` 执行暂停与交互。
+4. 在需要 gate、失败重试、`retry-limit` 或 review 时，按 `docs/gates.md` 执行暂停与交互。
 5. 输出时始终说明当前 change-id、当前阶段、下一步动作。

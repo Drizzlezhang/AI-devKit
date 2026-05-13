@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `templates/STATE.md` 作为 change 级状态文件 schema 模板，并增加 `Recent Changes` 历史段。
+- `bin/render-template.js` 作为模板分段渲染的唯一入口脚本。
+
+### Changed
+- `devkit-go` 的状态管理文档与各阶段退出检查清单统一要求维护 `STATE.md.Recent Changes`。
+- `bin/smoke.js` 开始校验 change 级 `STATE.md` 的字段顺序与 schema 兼容性。
+- VERIFY 阶段增加 retry-limit gate、升级/降级/中止三选一，以及 abandoned change 的归档约定。
+- `_meta.yaml` 升级为 schema v2，并为跨会话恢复补充 `last_*` 字段与优先读取规则。
+- 模板分段语义收敛到 `bin/render-template.js`，相关 stage 文档改为引用统一渲染规则与阶段切换仪式。
+- `REQUIREMENT.md` 的验收标准升级为 `AC | 验证方式` 对账格式，`VERIFICATION.md` 与 SPEC/VERIFY 文档同步要求按该列执行验证。
+- `devkit-go` 的 gate matrix 收敛为按 Size 分级：M 默认仅强制 `post-spec` 与 `pre-commit`，L 保持完整 gate。
+
 ## [0.1.2] - 2026-05-13
 
 ### Added

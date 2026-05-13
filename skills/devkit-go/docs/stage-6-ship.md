@@ -11,6 +11,14 @@
 - 提示用户是否继续 push 或创建 PR
 - 将 `_meta.yaml` 标记为 `completed`
 
+## 退出检查清单
+- [ ] commit message 已准备或已提交
+- [ ] `_meta.yaml.status` 已更新为最终状态
+- [ ] `.specs/STATE.md` 与当前 change 同步
+- [ ] `_meta.yaml.last_next` 已更新
+- [ ] `_meta.yaml.schema_version == 2`
+- [ ] `STATE.md.Recent Changes` 已 append 本阶段摘要
+
 ## 产物要求
 - git commit hash
 - `_meta.yaml` 中 `status: completed`

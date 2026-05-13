@@ -1,6 +1,6 @@
 # 2-DESIGN — 技术设计
 
-按 `_meta.yaml.size` 渲染 `templates/DESIGN.md` 对应分段：XS 仅保留 `size:all`，S 增加 `size:S+`，M 再增加 `size:M+`，L 保留全部分段。
+渲染规则见 `bin/render-template.js`；阶段切换输出形式见 `docs/workflow-overview.md` 的“阶段切换仪式”。
 
 ## 输入
 - `requirements.md`
@@ -13,5 +13,11 @@
 - 记录架构决策（ADR）
 - 分析风险与缓解措施
 
-## 产物要求
-创建 `.specs/<change-id>/design.md`，参考 `templates/DESIGN.md` 结构。
+## 退出检查清单
+- [ ] `design.md` 已创建且符合当前 Size 的模板裁剪结果
+- [ ] `_meta.yaml.current_stage` 已更新
+- [ ] `.specs/STATE.md` 与当前 change 同步
+- [ ] `_meta.yaml.last_tldr` 已更新
+- [ ] `_meta.yaml.last_next` 已更新
+- [ ] `_meta.yaml.schema_version == 2`
+- [ ] `STATE.md.Recent Changes` 已 append 本阶段摘要

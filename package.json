@@ -24,6 +24,7 @@
   "scripts": {
     "check": "node ./bin/install.js --help && node ./bin/check-changelog.js",
     "detect": "node ./bin/detect.js",
+    "render": "node ./bin/render-template.js",
     "smoke": "node ./bin/smoke.js",
     "pack:check": "npm pack --dry-run"
   }

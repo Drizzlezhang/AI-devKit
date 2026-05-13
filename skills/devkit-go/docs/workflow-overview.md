@@ -31,22 +31,20 @@
 - `templates/TASK.md` → `.specs/<change-id>/tasks.md`
 - `templates/VERIFICATION.md` → `.specs/<change-id>/verification.md`
 - `templates/_meta.yaml` → `.specs/<change-id>/_meta.yaml`
+- `templates/STATE.md` → `.specs/<change-id>/STATE.md`
 
-模板加载时，必须根据 `_meta.yaml.size` 保留对应分段：
-- XS：仅保留 `size:all`
-- S：保留 `size:all` + `size:S+`
-- M：保留 `size:all` + `size:S+` + `size:M+`
-- L：保留全部分段
-- 其余分段与包裹注释本身都必须在生成产物时移除
-- 若分段渲染失败，回退到完整模板并显式给出 warning
+模板渲染统一由 `bin/render-template.js` 执行；分段语义与失败行为以该脚本为唯一事实源。
 
 如果项目根目录存在 `.devkit/project.yaml`，启动时还必须把它作为共享元信息输入：
 - `project.scale`：作为 Size 路由的基础事实
 - `project.language` / `project.framework`：作为文档与方案裁剪输入
 - `context_budget`：作为默认上下文预算来源；若缺失则回退到本文件中的默认预算
 
+如果当前 change 存在 `.specs/<change-id>/_meta.yaml`，跨会话恢复时必须优先读取其中的 `last_tldr`、`last_next`、`last_risk`、`last_progress_note`，再回读根级 `.specs/STATE.md` 与当前阶段产物。
+
 ## Context Budget
 你必须默认控制上下文预算，而不是把所有历史产物重新塞回当前会话：
+- 如果当前 change 的 `_meta.yaml` 存在，跨会话恢复时优先读取其中的 `last_*` 字段，再决定是否需要扩展上下文。
 - 如果 `.devkit/project.yaml.context_budget` 存在，优先采用其中的预算值。
 - XS/S：优先使用当前阶段主产物 + 必要上游产物，不回读整套 `.specs`
 - M：默认读取当前阶段主产物 + 最近一个上游产物
@@ -56,6 +54,18 @@
 - 当前产物缺字段
 - 上下游产物结论冲突
 - 用户要求回顾完整设计链路
+
+## 阶段切换仪式
+
+| Size | 仪式形式 | Token 预算 |
+|------|---------|-----------|
+| XS | 单行摘要：`<stage_name> done. Next: <next_action>.` | ≤ 50 tokens |
+| S | 三行摘要：阶段成果 1 行 + 下一步 1 行 + 风险 1 行（无则省略） | ≤ 150 tokens |
+| M | 完整模板：成果列表 + 下一步 + 风险 + post-gate 询问 | ≤ 500 tokens |
+| L | 完整模板 + Recent Changes append + Gate 必选项展示 | ≤ 800 tokens |
+
+- XS / S 阶段切换不得超过预算。
+- M / L 必须保留完整阶段切换仪式，不得压缩为单行。
 
 ## TL;DR 约定
 每次阶段完成后，建议在输出末尾附一个极短摘要，便于恢复：
