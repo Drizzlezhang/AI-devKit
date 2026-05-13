@@ -35,13 +35,18 @@ function printHelp() {
 
 Usage:
   node bin/install.js [options]
-  npx ai-devkit [options]
+  ai-devkit [options]
 
 Options:
   --help              Show this help message
   --global            Install into the verified global skills directory for the selected runtime
   --project           Install into the current project's .claude/skills directory
   --runtime <name>    Force runtime: claude | trae | codex
+
+Verified usage paths:
+  - Local development: node bin/install.js [options]
+  - Installed package: ai-devkit [options]
+  - Direct npx execution may depend on local registry and auth configuration
 
 What this installer does:
   - Detects Claude Code, Trae CLI, or Codex CLI from local config directories
