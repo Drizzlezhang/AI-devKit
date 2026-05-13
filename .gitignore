@@ -1,6 +1,7 @@
 node_modules/
 .DS_Store
 .specs/
+.devkit/cache.tmp
 .claude/settings.local.json
 .claude/skills/
 *.log

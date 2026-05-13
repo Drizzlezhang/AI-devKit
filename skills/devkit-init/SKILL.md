@@ -34,8 +34,9 @@ trigger: manual
 你必须按以下顺序读取和执行，并在阶段输出中显式确认已读取的关键文档：
 
 ## 启动时必读
-1. `docs/project-analysis.md`
-2. `docs/bytedcli-policy.md`
+1. `.devkit/project.yaml`（若存在；不存在则生成）
+2. `docs/project-analysis.md`
+3. `docs/bytedcli-policy.md`
 
 ## 在处理 `CLAUDE.md` 之前必读
 3. `docs/claude-md-strategy.md`
@@ -52,7 +53,7 @@ trigger: manual
 如果当前阶段缺少对应前置文档的已读确认，你必须先补读再继续，而不是依赖隐式记忆跳过。
 
 # 阶段执行
-1. 先依据 `docs/project-analysis.md` 完成项目分析并输出摘要。
+1. 先读取或生成 `.devkit/project.yaml`，再依据 `docs/project-analysis.md` 完成项目分析并输出摘要。
 2. 依据 `docs/claude-md-strategy.md` 生成或优化 `CLAUDE.md` 方案；如果要改已有 `CLAUDE.md`，先展示建议并等待确认。
 3. 依据 `docs/install-planning.md` 形成“计划安装清单”，并依据 `docs/bytedcli-policy.md` 判断是否强制纳入 bytedcli。
 4. 如果命中空项目 / 一句话需求场景，先读取 `docs/baseline-bootstrap.md`，切换到基础保障模式，确保安装清单不为空。

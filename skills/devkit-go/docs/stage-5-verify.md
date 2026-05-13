@@ -1,5 +1,7 @@
 # 5-VERIFY — 测试验证
 
+按 `_meta.yaml.size` 渲染 `templates/VERIFICATION.md` 对应分段：XS 仅保留 `size:all`，S 增加 `size:S+`，M 再增加 `size:M+`，L 保留全部分段。
+
 ## 输入
 - 代码变更
 - 优先读取 `requirements.md`

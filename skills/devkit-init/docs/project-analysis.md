@@ -1,5 +1,15 @@
 # 项目分析
 
+## 缓存优先硬规则
+在初始化前，你必须先检查 `.devkit/project.yaml`：
+1. 文件不存在：运行 `node bin/detect.js` 完整扫描并生成缓存。
+2. 文件存在：
+   - 如果 `scanned_at + ttl_seconds < now`，视为失效，重新扫描。
+   - 如果重新计算任一 fingerprint 字段后发生变化，视为失效，重新扫描。
+   - 如果用户显式要求 `--refresh`，强制重扫。
+   - 否则直接使用缓存结果，跳过深度扫描。
+3. 后续项目分析输出应优先复用 `project.yaml` 中的 `project.*`、`byted_signals.*` 与 `ai_configs.*` 字段；只有缓存缺字段时才补充人工扫描。
+
 在初始化前，你必须扫描项目根目录并归纳以下信息：
 
 ## 扫描目标

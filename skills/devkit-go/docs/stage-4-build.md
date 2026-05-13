@@ -1,5 +1,7 @@
 # 4-BUILD — 编码实现
 
+本阶段消费上游产物时，必须沿用 `_meta.yaml.size` 对模板分段的渲染结果；若检测到分段裁剪失败，回退完整模板并显式记录 warning。
+
 ## 输入
 - 默认读取 `tasks.md`
 - 若缺失，则按降级链回退：`design.md` → `requirements.md` → `proposal.md`

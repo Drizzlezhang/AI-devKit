@@ -1,0 +1,30 @@
+schema_version: 1
+scanned_at: 2026-05-13T03:59:22.355Z
+ttl_seconds: 604800
+fingerprint:
+  package_json_hash: sha256:57a741750965f2a00fdfff3ce31183df1d88b44f690630e2e56ad70ad171e370
+  lockfile_hash: ""
+  go_mod_hash: ""
+  pyproject_hash: ""
+  git_remote: git@github.com:Drizzlezhang/AI-devKit.git
+project:
+  name: @Drizzlezhang/ai-devkit
+  language: [javascript]
+  framework: []
+  scale: S
+  loc: 1148
+  module_count: 3
+  is_monorepo: false
+byted_signals:
+  strong: []
+  weak: []
+  is_internal: false
+ai_configs:
+  has_claude_md: true
+  has_cursor_rules: false
+  installed_skills: [devkit-go, devkit-init]
+context_budget:
+  xs: 3000
+  s: 5000
+  m: 30000
+  l: 80000

@@ -1,5 +1,7 @@
 # 3-PLAN — 任务拆解
 
+按 `_meta.yaml.size` 渲染 `templates/TASK.md` 对应分段：XS 仅保留 `size:all`，S 增加 `size:S+`，M 再增加 `size:M+`，L 保留全部分段。
+
 ## 输入
 - `design.md`
 

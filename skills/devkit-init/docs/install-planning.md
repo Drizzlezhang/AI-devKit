@@ -9,6 +9,12 @@
 
 如果命中空项目 / 一句话需求场景，还必须结合 `docs/baseline-bootstrap.md` 一起判断安装清单。
 
+## project.yaml 联动
+如果 `.devkit/project.yaml` 已存在，你必须把它视为安装规划的共享元信息池：
+- 优先复用 `project.language`、`project.framework`、`project.scale`、`byted_signals` 与 `ai_configs` 字段，而不是重复做整仓推断。
+- 当安装新的 skill 后，应把 skill 名追加到 `ai_configs.installed_skills`，保持该字段与实际安装结果一致。
+- 如果 `project.yaml` 缺失、过期或 fingerprint 失效，先重新执行 detect，再继续安装规划。
+
 ## 候选来源
 你可以从以下来源中选择最合适的项目，也可以使用官方市场中的高质量项目或任何通过 `npx` / `npm` 可安装的 coding skill：
 - 官方 skill / plugin 市场

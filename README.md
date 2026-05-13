@@ -90,6 +90,7 @@ npm install @Drizzlezhang/ai-devkit
 
 ### CLI 命令
 - `ai-devkit`
+- `ai-devkit-detect`
 
 ### 参数
 - `--help` / `-h`：显示帮助
@@ -100,9 +101,11 @@ npm install @Drizzlezhang/ai-devkit
 ### 常用示例
 ```bash
 node bin/install.js --help
+node bin/detect.js --refresh
 ./node_modules/.bin/ai-devkit --help
 ./node_modules/.bin/ai-devkit --project
 ./node_modules/.bin/ai-devkit --project --runtime claude
+./node_modules/.bin/ai-devkit-detect --refresh
 ./node_modules/.bin/ai-devkit --runtime codex --project
 ./node_modules/.bin/ai-devkit --runtime trae --project
 ./node_modules/.bin/ai-devkit --runtime claude --global
@@ -282,10 +285,12 @@ AI-devKit/
 - 两个 skill 的 frontmatter 必须始终包含 `trigger: manual`
 - 修改安装行为后，至少重新验证一次 `node bin/install.js --help`
 - 修改 README 或包元数据时，应与 `package.json`、`bin/install.js`、`skills/*/SKILL.md` 同步核对
+- 版本号发生变化时，必须同步更新 `CHANGELOG.md`；若仍在开发中，至少保持 `[Unreleased]` 段记录本轮变更
 
 ### 常用检查命令
 ```bash
 npm run check
+npm run smoke
 npm run pack:check
 ```
 

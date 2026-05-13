@@ -17,9 +17,10 @@ trigger: manual
 - 在 SHIP 阶段生成 conventional commits 风格提交信息并完成 git commit。
 
 # 启动时必读
-1. `docs/workflow-overview.md`
-2. `docs/size-routing.md`
-3. `docs/state-management.md`
+1. `.devkit/project.yaml`（若存在）
+2. `docs/workflow-overview.md`
+3. `docs/size-routing.md`
+4. `docs/state-management.md`
 
 # 按阶段读取规则
 - 进入 0-CHANGE 前读取：`docs/stage-0-change.md`

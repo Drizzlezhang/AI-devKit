@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const readline = require('readline');
+const childProcess = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const SKILLS_SOURCE = path.join(ROOT, 'skills');
@@ -35,7 +36,9 @@ function printHelp() {
 
 Usage:
   node bin/install.js [options]
+  node bin/detect.js [--refresh]
   ai-devkit [options]
+  ai-devkit-detect [--refresh]
 
 Options:
   --help              Show this help message
@@ -45,7 +48,8 @@ Options:
 
 Verified usage paths:
   - Local development: node bin/install.js [options]
-  - Installed package: ai-devkit [options]
+  - Project detection: node bin/detect.js [--refresh]
+  - Installed package: ai-devkit [options], ai-devkit-detect [--refresh]
   - Direct npx execution may depend on local registry and auth configuration
 
 What this installer does:
@@ -235,6 +239,17 @@ function installSkill(skillName, targetSkillsDir, copiedFiles) {
   }
 }
 
+function recordInstalledSkills(projectRoot, skillNames) {
+  if (!skillNames.length) {
+    return;
+  }
+
+  childProcess.execFileSync(process.execPath, [path.join(__dirname, 'detect.js'), 'record-install', ...skillNames], {
+    cwd: projectRoot,
+    stdio: 'pipe',
+  });
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
@@ -259,8 +274,13 @@ async function main() {
   ensureDirectory(targetSkillsDir);
 
   const copiedFiles = [];
+  const installedSkillNames = ['devkit-init', 'devkit-go'];
   installSkill('devkit-init', targetSkillsDir, copiedFiles);
   installSkill('devkit-go', targetSkillsDir, copiedFiles);
+
+  if (scope === 'project') {
+    recordInstalledSkills(process.cwd(), installedSkillNames);
+  }
 
   console.log('ai-devkit installation complete.');
   console.log(`Runtime: ${runtimeSelection.runtime.label}`);

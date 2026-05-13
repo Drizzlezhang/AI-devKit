@@ -3,7 +3,8 @@
   "version": "0.1.1",
   "description": "Intelligent Claude Code skill installer and spec-driven workflow toolkit with Trae CLI and Codex CLI runtime detection",
   "bin": {
-    "ai-devkit": "bin/install.js"
+    "ai-devkit": "bin/install.js",
+    "ai-devkit-detect": "bin/detect.js"
   },
   "keywords": ["claude-code", "skill", "devkit", "spec-driven", "workflow"],
   "repository": {
@@ -19,9 +20,11 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "files": ["bin/", "skills/", "templates/", "README.md", "LICENSE"],
+  "files": ["bin/", "skills/", "templates/", "README.md", "LICENSE", "CHANGELOG.md"],
   "scripts": {
-    "check": "node ./bin/install.js --help",
+    "check": "node ./bin/install.js --help && node ./bin/check-changelog.js",
+    "detect": "node ./bin/detect.js",
+    "smoke": "node ./bin/smoke.js",
     "pack:check": "npm pack --dry-run"
   }
 }
