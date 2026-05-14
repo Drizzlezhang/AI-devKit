@@ -572,8 +572,8 @@ function assertSeedRecommend(projectRoot) {
   assertIncludes(tsOut, 'recommended_seeds:', 'TS project should have recommended_seeds section');
   assertIncludes(tsOut, 'name: frontend-design', 'TS project should match frontend-design seed');
 
-  // Scenario 2: unconditional seed (caveman) always appears
-  assertIncludes(tsOut, 'name: caveman', 'caveman (unconditional seed) should always appear');
+  // Scenario 2: unconditional seed (superpowers) always appears
+  assertIncludes(tsOut, 'name: superpowers', 'superpowers (unconditional seed) should always appear');
 
   // Verify new output fields
   assertIncludes(tsOut, 'install:', 'recommended output should include install field');
@@ -593,13 +593,13 @@ function assertSeedRecommend(projectRoot) {
     encoding: 'utf8',
     env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
   });
-  assertIncludes(installedOut, 'name: caveman', 'caveman should still appear (not in installed_skills)');
+  assertIncludes(installedOut, 'name: superpowers', 'superpowers should still appear (not in installed_skills)');
   assertIncludes(installedOut, 'name: frontend-design', 'frontend-design should still appear (not in installed_skills)');
 
-  // Add caveman to installed_skills manually and verify exclusion
+  // Add superpowers to installed_skills manually and verify exclusion
   const yamlPath = path.join(tsRoot, '.devkit', 'project.yaml');
   let yamlContent = fs.readFileSync(yamlPath, 'utf8');
-  yamlContent = yamlContent.replace('installed_skills: [devkit-go, devkit-init]', 'installed_skills: [caveman, devkit-go, devkit-init]');
+  yamlContent = yamlContent.replace('installed_skills: [devkit-go, devkit-init]', 'installed_skills: [superpowers, devkit-go, devkit-init]');
   fs.writeFileSync(yamlPath, yamlContent, 'utf8');
   const excludeOut = childProcess.execFileSync(process.execPath, [detectPath], {
     cwd: tsRoot,
@@ -607,7 +607,7 @@ function assertSeedRecommend(projectRoot) {
     encoding: 'utf8',
     env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
   });
-  assertNotIncludes(excludeOut, 'name: caveman', 'caveman should be excluded when already installed');
+  assertNotIncludes(excludeOut, 'name: superpowers', 'superpowers should be excluded when already installed');
 
   // Scenario 4: no matching seeds → find-skill hint
   const bareRoot = path.join(path.dirname(projectRoot), 'seed-bare-fixture');

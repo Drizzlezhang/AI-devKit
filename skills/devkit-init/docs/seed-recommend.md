@@ -19,7 +19,7 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
    - `is_internal`：项目的 `byted_signals.is_internal` 等于该值则匹配
    - `when` 整体缺省 = 无条件推荐
 4. 排除 `project.yaml.ai_configs.installed_skills` 中已有的 skill。
-5. 按 `priority` 升序排序，取前 8 条输出推荐列表。
+5. 按 `when` 条件数降序（条件越多越精准优先）、`priority` 升序排序，取前 8 条输出推荐列表。
 
 ## 输出格式
 

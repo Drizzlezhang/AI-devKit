@@ -126,12 +126,46 @@ seeds:
     stars: 15000
     priority: 15
 
+  # ── 工程全生命周期（Matt Pocock） ──
+  - name: mattpocock-skills
+    description: "TypeScript 教父出品 18 skill：grill-me/tdd/write-a-prd/diagnose/improve-codebase-architecture 等"
+    source: "github.com/mattpocock/skills"
+    install: "npx skills add mattpocock/skills"
+    stars: 68000
+    priority: 16
+
+  # ── 元提示 + 上下文工程 ──
+  - name: get-shit-done
+    description: "轻量级元提示 + spec 驱动开发系统，解决长会话上下文腐化，支持 14 种运行时"
+    source: "github.com/gsd-build/get-shit-done"
+    install: "npx get-shit-done-cc@latest"
+    stars: 61000
+    priority: 17
+
+  # ── 工程 Skill（Addy Osmani） ──
+  - name: addy-agent-skills
+    description: "Google Chrome 工程总监出品 22 个生产级 skill：spec→plan→build→test→review→ship 全生命周期"
+    source: "github.com/addyosmani/agent-skills"
+    install: "npx skills add addyosmani/agent-skills"
+    stars: 38000
+    priority: 18
+
+  # ── HTML 原生设计 ──
+  - name: huashu-design
+    description: "HTML 原生设计 skill：高保真原型/幻灯片/动画 + 20 设计哲学 + MP4 导出"
+    source: "github.com/alchaincyf/huashu-design"
+    install: "npx skills add alchaincyf/huashu-design"
+    stars: 11000
+    priority: 19
+    when:
+      has_file: "package.json"
+
   # ── ML/AI 生态 ──
   - name: huggingface-skills
     description: "Hugging Face 生态 skill：训练/评估/部署开源 AI 模型"
     source: "github.com/huggingface/skills"
     install: "/plugin install huggingface-skills@claude-plugins-official"
     stars: 10000
-    priority: 16
+    priority: 20
     when:
       language: "python"
