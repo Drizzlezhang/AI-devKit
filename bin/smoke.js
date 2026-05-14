@@ -28,6 +28,7 @@ function main() {
     assertDetectTiers(projectRoot);
     assertManagedBlock(projectRoot);
     assertAuditDrift(projectRoot);
+    assertSeedRecommend(projectRoot);
     console.log('PASS');
   } catch (error) {
     console.error(`FAIL: ${error.message}`);
@@ -550,6 +551,102 @@ function assertAuditDrift(projectRoot) {
 
   // Cleanup
   fs.rmSync(auditRoot, { recursive: true, force: true });
+}
+
+function assertSeedRecommend(projectRoot) {
+  const detectPath = path.join(ROOT, 'bin', 'detect.js');
+  const env = { ...process.env };
+
+  // Scenario 1: TypeScript project (has package.json, language includes typescript) → matches tdd seed
+  const tsRoot = path.join(path.dirname(projectRoot), 'seed-ts-fixture');
+  fs.mkdirSync(tsRoot, { recursive: true });
+  const tsPkg = { name: 'seed-ts-test', version: '0.0.1', private: true, dependencies: { typescript: '^5.0.0', react: '^18.0.0' } };
+  fs.writeFileSync(path.join(tsRoot, 'package.json'), `${JSON.stringify(tsPkg, null, 2)}\n`, 'utf8');
+
+  const tsOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: tsRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(tsOut, 'recommended_seeds:', 'TS project should have recommended_seeds section');
+  assertIncludes(tsOut, 'name: tdd', 'TS project should match tdd seed');
+
+  // Scenario 2: unconditional seed (caveman) always appears
+  assertIncludes(tsOut, 'name: caveman', 'caveman (unconditional seed) should always appear');
+
+  // Scenario 3: already-installed skill not recommended
+  // Run install to add skills, then run detect again — installed skills should be excluded
+  const installPath = path.join(ROOT, 'bin', 'install.js');
+  childProcess.execFileSync(process.execPath, [installPath, '--project'], {
+    cwd: tsRoot,
+    stdio: 'pipe',
+    env: { ...env },
+  });
+  const installedOut = childProcess.execFileSync(process.execPath, [detectPath, '--refresh'], {
+    cwd: tsRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  // devkit-init and devkit-go are installed, but they aren't in seeds so we check:
+  // caveman and tdd are NOT installed so they should still appear
+  assertIncludes(installedOut, 'name: caveman', 'caveman should still appear (not in installed_skills)');
+  assertIncludes(installedOut, 'name: tdd', 'tdd should still appear (not in installed_skills)');
+
+  // Now add caveman to installed_skills manually and verify exclusion
+  const yamlPath = path.join(tsRoot, '.devkit', 'project.yaml');
+  let yamlContent = fs.readFileSync(yamlPath, 'utf8');
+  yamlContent = yamlContent.replace('installed_skills: [devkit-go, devkit-init]', 'installed_skills: [caveman, devkit-go, devkit-init]');
+  fs.writeFileSync(yamlPath, yamlContent, 'utf8');
+  const excludeOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: tsRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertNotIncludes(excludeOut, 'name: caveman', 'caveman should be excluded when already installed');
+
+  // Scenario 4: no matching seeds → find-skill hint
+  const bareRoot = path.join(path.dirname(projectRoot), 'seed-bare-fixture');
+  fs.mkdirSync(bareRoot, { recursive: true });
+  const barePkg = { name: 'seed-bare-test', version: '0.0.1', private: true };
+  fs.writeFileSync(path.join(bareRoot, 'package.json'), `${JSON.stringify(barePkg, null, 2)}\n`, 'utf8');
+
+  // Remove seeds.yaml temporarily to simulate no matches
+  const seedsPath = path.join(ROOT, 'skills', 'devkit-init', 'seeds.yaml');
+  const seedsBackup = fs.readFileSync(seedsPath, 'utf8');
+  fs.writeFileSync(seedsPath, 'seeds:\n  - name: "only-internal"\n    description: "test"\n    source: "test"\n    when:\n      is_internal: true\n    priority: 1\n', 'utf8');
+
+  const bareOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: bareRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(bareOut, 'recommended_seeds: []', 'no matching seeds should output empty list');
+  assertIncludes(bareOut, 'find-skill', 'no seeds should hint find-skill');
+
+  // Restore seeds.yaml
+  fs.writeFileSync(seedsPath, seedsBackup, 'utf8');
+
+  // Scenario 5: malformed seeds.yaml → graceful degradation
+  fs.writeFileSync(seedsPath, 'this is not valid yaml {{{', 'utf8');
+  const malformedOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: bareRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  // Should not crash, and should output empty recommended_seeds or skip it
+  assertIncludes(malformedOut, 'project:', 'malformed seeds.yaml should not block bootstrap');
+
+  // Restore seeds.yaml
+  fs.writeFileSync(seedsPath, seedsBackup, 'utf8');
+
+  // Cleanup
+  fs.rmSync(tsRoot, { recursive: true, force: true });
+  fs.rmSync(bareRoot, { recursive: true, force: true });
 }
 
 function readRequiredFile(filePath) {

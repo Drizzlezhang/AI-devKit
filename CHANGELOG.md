@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `skills/devkit-init/seeds.yaml`，精选种子推荐清单，支持按 language / has_file / has_dir / scale_gte / is_internal 条件匹配。
+- `skills/devkit-init/docs/seed-recommend.md`，两级推荐模型文档（精选种子优先 → find-skill 备选）。
+- `bin/detect.js` 在 bootstrap / adopt 流程末尾输出 `recommended_seeds` 推荐列表，排除已装 skill。
 - `templates/STATE.md` 作为 change 级状态文件 schema 模板，并增加 `Recent Changes` 历史段。
 - `bin/render-template.js` 作为模板分段渲染的唯一入口脚本。
 - `skills/devkit-init/docs/runtime-decision.md`，定义 devkit-init 的运行时档位判定树与显式覆盖规则。
@@ -15,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `skills/devkit-init/docs/adopt-flow.md`，描述接入档位的合并流程与边界规则。
 
 ### Changed
+- `skills/devkit-init/SKILL.md` 首装与接入分支末尾追加种子推荐环节。
+- `bin/smoke.js` 新增种子推荐场景覆盖：TS 匹配、无条件种子、已装排除、无匹配提示、格式错误降级。
 - `devkit-go` 的状态管理文档与各阶段退出检查清单统一要求维护 `STATE.md.Recent Changes`。
 - `bin/smoke.js` 开始校验 change 级 `STATE.md` 的字段顺序与 schema 兼容性。
 - VERIFY 阶段增加 retry-limit gate、升级/降级/中止三选一，以及 abandoned change 的归档约定。

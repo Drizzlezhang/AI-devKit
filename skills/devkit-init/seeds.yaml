@@ -1,0 +1,35 @@
+seeds:
+  - name: "caveman"
+    description: "Token-efficient response mode for Claude Code — strips filler, keeps technical substance."
+    source: "内置"
+    when:
+    priority: 1
+
+  - name: "grill-me"
+    description: "需求澄清增强 — 用结构化追问把模糊需求收敛为可执行 spec。"
+    source: "内置"
+    when:
+      scale_gte: "M"
+    priority: 2
+
+  - name: "tdd"
+    description: "Test-driven development workflow — write failing test first, then implement."
+    source: "内置"
+    when:
+      language: "typescript"
+      has_file: "package.json"
+    priority: 3
+
+  - name: "code-reviewer"
+    description: "Automated code review with severity-tagged findings and actionable fix suggestions."
+    source: "内置"
+    when:
+      has_dir: ".github"
+    priority: 4
+
+  - name: "security-scanner"
+    description: "OWASP-aware security scan — flags injection, XSS, and credential leaks in code changes."
+    source: "内置"
+    when:
+      is_internal: true
+    priority: 5

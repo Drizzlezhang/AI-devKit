@@ -63,6 +63,135 @@ function main() {
   console.log(`languages: ${analysis.project.language.join(', ') || 'unknown'}`);
   console.log(`frameworks: ${analysis.project.framework.join(', ') || 'none'}`);
   console.log(`internal: ${analysis.byted_signals.is_internal ? 'yes' : 'no'}`);
+
+  const seeds = recommendSeeds(process.cwd(), analysis);
+  if (seeds.length > 0) {
+    console.log('recommended_seeds:');
+    for (const seed of seeds) {
+      console.log(`  - name: ${seed.name}`);
+      console.log(`    description: ${seed.description}`);
+      console.log(`    source: ${seed.source}`);
+    }
+  } else {
+    console.log('recommended_seeds: []');
+    console.log('hint: use find-skill to discover more skills');
+  }
+}
+
+const SCALE_ORDER = { XS: 0, S: 1, M: 2, L: 3, XL: 4 };
+
+function recommendSeeds(rootDir, projectMeta) {
+  const seedsPath = path.join(path.dirname(__dirname), 'skills', 'devkit-init', 'seeds.yaml');
+  if (!fs.existsSync(seedsPath)) {
+    return [];
+  }
+
+  let seedsContent;
+  try {
+    seedsContent = fs.readFileSync(seedsPath, 'utf8');
+  } catch (error) {
+    return [];
+  }
+
+  const seeds = parseSeedsYaml(seedsContent);
+  if (!Array.isArray(seeds) || seeds.length === 0) {
+    return [];
+  }
+
+  const language = projectMeta.project.language || [];
+  const scale = projectMeta.project.scale || 'XS';
+  const isInternal = !!(projectMeta.byted_signals && projectMeta.byted_signals.is_internal);
+  const installedSkills = new Set(
+    (projectMeta.ai_configs && Array.isArray(projectMeta.ai_configs.installed_skills))
+      ? projectMeta.ai_configs.installed_skills : []
+  );
+
+  const matched = seeds.filter((seed) => {
+    if (installedSkills.has(seed.name)) {
+      return false;
+    }
+
+    const when = seed.when || {};
+    if (when.language && !language.includes(when.language)) {
+      return false;
+    }
+    if (when.has_file && !fs.existsSync(path.join(rootDir, when.has_file))) {
+      return false;
+    }
+    if (when.has_dir && !fs.existsSync(path.join(rootDir, when.has_dir))) {
+      return false;
+    }
+    if (when.scale_gte) {
+      const projectScaleVal = SCALE_ORDER[scale] || 0;
+      const requiredScaleVal = SCALE_ORDER[when.scale_gte] || 0;
+      if (projectScaleVal < requiredScaleVal) {
+        return false;
+      }
+    }
+    if (when.is_internal !== undefined && isInternal !== when.is_internal) {
+      return false;
+    }
+
+    return true;
+  });
+
+  matched.sort((a, b) => (a.priority || 99) - (b.priority || 99));
+  return matched;
+}
+
+function parseSeedsYaml(content) {
+  const seeds = [];
+  let current = null;
+  let inWhen = false;
+
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.replace(/\t/g, '    ');
+    const indent = line.search(/\S/);
+
+    if (/^\s*-\s+name:/.test(line)) {
+      if (current) seeds.push(current);
+      const value = line.replace(/^\s*-\s+name:\s*/, '').trim();
+      current = { name: unquote(value), when: {}, priority: 99 };
+      inWhen = false;
+      continue;
+    }
+
+    if (!current) continue;
+
+    const pair = line.match(/^\s+(\w+):\s*(.*)$/);
+    if (!pair) continue;
+
+    const [, key, rawValue] = pair;
+    const value = rawValue.trim();
+
+    if (key === 'when') {
+      inWhen = true;
+      continue;
+    }
+
+    // When block ends when we hit a non-when key at same or lower indent
+    if (inWhen && indent <= 4) {
+      inWhen = false;
+    }
+
+    if (inWhen) {
+      current.when[key] = (key === 'is_internal') ? unquote(value) === 'true' : unquote(value);
+    } else if (key === 'description' || key === 'source') {
+      current[key] = unquote(value);
+    } else if (key === 'priority') {
+      current[key] = Number(unquote(value)) || 99;
+    }
+  }
+
+  if (current) seeds.push(current);
+  return seeds;
+}
+
+function unquote(value) {
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1);
+  }
+  return value;
 }
 
 function runSilent(existing) {
