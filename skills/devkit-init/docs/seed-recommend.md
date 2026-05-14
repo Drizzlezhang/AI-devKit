@@ -5,7 +5,7 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
 ## 两级推荐模型
 
 1. **精选种子**：维护在 `seeds.yaml`，由 devkit 作者人工精选，按项目特征条件匹配后优先推荐。精选种子同时包含 skill 和 MCP server 两种类型。MCP 种子额外携带 `mcp_config` 配置片段和 `requires_auth` 认证标记。
-2. **find-skill 补充**：当精选种子不足以覆盖用户场景时，调用运行时的 find-skill 能力进行开放搜索作为备选。devkit 本身不实现 find-skill 调用逻辑，仅输出提示。
+2. **find-skill / find-mcp 补充**：当精选种子不足以覆盖用户场景时，调用运行时的 find-skill 或 find-mcp 能力进行开放搜索作为备选。devkit 本身不实现调用逻辑，仅输出提示。
 
 ## 种子匹配算法
 
@@ -39,6 +39,7 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
 >    安装：`claude mcp add --transport http github https://api.githubcopilot.com/mcp/`
 >
 > 💡 需要更多？使用 find-skill 搜索其他可用 Skill。
+> 💡 需要更多 MCP Server？使用 find-mcp 或 MCP Registry 搜索更多可用 MCP Server。
 ```
 
 当无匹配种子时：
@@ -47,11 +48,13 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
 > 💡 未找到精选推荐。使用 find-skill 搜索其他可用 Skill。
 ```
 
-## find-skill 触发条件
+## find-skill / find-mcp 触发条件
 
 - 精选种子匹配结果为 0 条时，自动提示
 - 精选种子有匹配时，在列表末尾附加一行 find-skill 提示
 - 用户主动要求时直接调用
+- `find_mcp_hint` 始终输出，提示用户可通过 MCP Registry 搜索更多 MCP server
+- MCP Registry 种子本身就是一个 MCP server，安装后可直接在 Claude Code 中搜索
 
 ## 不推荐重复已装 skill
 

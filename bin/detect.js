@@ -66,6 +66,7 @@ function main() {
 
   const seeds = recommendSeeds(process.cwd(), analysis);
   console.log('find_skill_hint: true');
+  console.log('find_mcp_hint: true');
   if (seeds.length > 0) {
     console.log('recommended_seeds:');
     for (const seed of seeds) {
@@ -76,11 +77,12 @@ function main() {
       if (seed.type === 'mcp') {
         console.log(`    type: mcp`);
         console.log(`    requires_auth: ${seed.requires_auth || false}`);
+        console.log(`    mcp_scope: ${(seed.mcp_config && seed.mcp_config.scope) || 'project'}`);
       }
     }
   } else {
     console.log('recommended_seeds: []');
-    console.log('hint: use find-skill to discover more skills');
+    console.log('hint: use find-skill / find-mcp to discover more');
   }
 }
 

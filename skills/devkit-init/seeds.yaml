@@ -231,3 +231,50 @@ seeds:
       env_keys: ["SENTRY_AUTH_TOKEN"]
       scope: user
     requires_auth: true
+
+  # ── MCP: 知识图谱记忆 ──
+  - name: memory-mcp
+    type: mcp
+    description: "MCP server：知识图谱持久化记忆，跨会话保留实体和关系"
+    source: "github.com/modelcontextprotocol/servers"
+    install: "claude mcp add --transport stdio memory -- npx -y @modelcontextprotocol/server-memory"
+    stars: 85000
+    priority: 25
+    mcp_config:
+      transport: stdio
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-memory"]
+      scope: user
+    requires_auth: false
+
+  # ── MCP: 深度思考 ──
+  - name: sequential-thinking-mcp
+    type: mcp
+    description: "MCP server：反思式逐步推理，支持修正与分支思考，适合复杂问题分析"
+    source: "github.com/modelcontextprotocol/servers"
+    install: "claude mcp add --transport stdio sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking"
+    stars: 85000
+    priority: 26
+    mcp_config:
+      transport: stdio
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      scope: user
+    requires_auth: false
+    when:
+      scale_gte: "M"
+
+  # ── MCP: MCP 注册表搜索 ──
+  - name: mcp-registry
+    type: mcp
+    description: "MCP server：从官方注册表语义搜索 MCP server，发现更多 AI 工具能力"
+    source: "github.com/smithery-ai/smithery-cli-mcp"
+    install: "claude mcp add --transport stdio smithery -- npx -y @anthropic-ai/mcp-registry"
+    stars: 5000
+    priority: 27
+    mcp_config:
+      transport: stdio
+      command: npx
+      args: ["-y", "@anthropic-ai/mcp-registry"]
+      scope: user
+    requires_auth: false

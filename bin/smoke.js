@@ -580,6 +580,9 @@ function assertSeedRecommend(projectRoot) {
   assertIncludes(tsOut, 'stars:', 'recommended output should include stars field');
   assertIncludes(tsOut, 'find_skill_hint: true', 'recommended output should include find_skill_hint');
 
+  // Scenario 10: find_mcp_hint always present
+  assertIncludes(tsOut, 'find_mcp_hint: true', 'recommended output should include find_mcp_hint');
+
   // Scenario 3: already-installed skill not recommended
   const installPath = path.join(ROOT, 'bin', 'install.js');
   childProcess.execFileSync(process.execPath, [installPath, '--project'], {
@@ -746,6 +749,44 @@ function assertSeedRecommend(projectRoot) {
 
   // Cleanup
   fs.rmSync(mcpRoot, { recursive: true, force: true });
+
+  // Scenario 11: MCP seed outputs mcp_scope field
+  const mcpScopeRoot = path.join(path.dirname(projectRoot), 'seed-mcp-scope-fixture');
+  fs.mkdirSync(mcpScopeRoot, { recursive: true });
+  fs.writeFileSync(path.join(mcpScopeRoot, 'package.json'), JSON.stringify({ name: 'mcp-scope-test', version: '0.0.1', private: true }, null, 2) + '\n', 'utf8');
+
+  const seedsBackupForScope = fs.readFileSync(seedsPath, 'utf8');
+  fs.writeFileSync(seedsPath, [
+    'seeds:',
+    '  - name: test-mcp-server',
+    '    type: mcp',
+    '    description: "test mcp"',
+    '    source: "test"',
+    '    install: "claude mcp add test"',
+    '    stars: 100',
+    '    priority: 1',
+    '    mcp_config:',
+    '      transport: stdio',
+    '      command: npx',
+    '      args: ["-y", "test-mcp"]',
+    '      scope: user',
+    '    requires_auth: true',
+    '',
+  ].join('\n'), 'utf8');
+
+  const mcpScopeOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: mcpScopeRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(mcpScopeOut, 'type: mcp', 'MCP seed should output type: mcp');
+  assertIncludes(mcpScopeOut, 'requires_auth: true', 'MCP seed should output requires_auth');
+  assertIncludes(mcpScopeOut, 'mcp_scope: user', 'MCP seed should output mcp_scope');
+
+  // Restore seeds.yaml and cleanup
+  fs.writeFileSync(seedsPath, seedsBackupForScope, 'utf8');
+  fs.rmSync(mcpScopeRoot, { recursive: true, force: true });
 }
 
 function readRequiredFile(filePath) {
