@@ -61,6 +61,8 @@
 - `npm install` 后执行安装脚本
 - 从官方市场安装
 - `git clone` 后复制相关文件到 `.claude/skills/`
+- MCP server：`claude mcp add --transport <stdio|http> <name> [-- <command> [args...]]`
+- MCP server（手动）：编辑 `.mcp.json`（项目级）或 `~/.claude.json`（用户级）
 
 ## 空项目兜底规则
 如果命中空项目基础保障模式，安装清单不能为空。
@@ -108,7 +110,7 @@
 至少包括：
 - CLI：检查可执行性与版本，例如 `bytedcli --version`、`caveman --version`
 - skill：检查目标目录下是否正确落盘 `SKILL.md`、`docs/` 与必要模板
-- MCP：检查配置是否已写入预期位置，并确认配置结构合法
+- MCP：检查配置是否已写入预期位置，并确认配置结构合法；执行 `claude mcp list` 确认 server 已注册；或检查 `.mcp.json` / `~/.claude.json` 中对应配置存在且结构合法
 - plugin / 市场安装：检查是否出现在宿主可识别的已安装列表中，或能被对应命令/配置读取
 
 你必须在收尾输出中展示：

@@ -73,6 +73,10 @@ function main() {
       console.log(`    description: ${seed.description}`);
       console.log(`    install: ${seed.install || seed.source}`);
       console.log(`    stars: ${seed.stars || 0}`);
+      if (seed.type === 'mcp') {
+        console.log(`    type: mcp`);
+        console.log(`    requires_auth: ${seed.requires_auth || false}`);
+      }
     }
   } else {
     console.log('recommended_seeds: []');
@@ -150,7 +154,7 @@ function recommendSeeds(rootDir, projectMeta) {
 function parseSeedsYaml(content) {
   const seeds = [];
   let current = null;
-  let inWhen = false;
+  let block = null; // 'when' | 'mcp_config' | null
 
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.replace(/\t/g, '    ');
@@ -160,7 +164,7 @@ function parseSeedsYaml(content) {
       if (current) seeds.push(current);
       const value = line.replace(/^\s*-\s+name:\s*/, '').trim();
       current = { name: unquote(value), when: {}, priority: 99 };
-      inWhen = false;
+      block = null;
       continue;
     }
 
@@ -173,17 +177,29 @@ function parseSeedsYaml(content) {
     const value = rawValue.trim();
 
     if (key === 'when') {
-      inWhen = true;
+      block = 'when';
       continue;
     }
 
-    // When block ends when we hit a non-when key at same or lower indent
-    if (inWhen && indent <= 4) {
-      inWhen = false;
+    if (key === 'mcp_config') {
+      block = 'mcp_config';
+      current.mcp_config = {};
+      continue;
     }
 
-    if (inWhen) {
+    // Block ends when indent returns to seed level (<=4)
+    if (block && indent <= 4) {
+      block = null;
+    }
+
+    if (block === 'when') {
       current.when[key] = (key === 'is_internal') ? unquote(value) === 'true' : unquote(value);
+    } else if (block === 'mcp_config') {
+      if (key === 'args' || key === 'env_keys') {
+        current.mcp_config[key] = parseInlineArray(value);
+      } else {
+        current.mcp_config[key] = unquote(value);
+      }
     } else if (key === 'description' || key === 'source') {
       current[key] = unquote(value);
     } else if (key === 'install') {
@@ -192,11 +208,29 @@ function parseSeedsYaml(content) {
       current[key] = Number(unquote(value)) || 0;
     } else if (key === 'priority') {
       current[key] = Number(unquote(value)) || 99;
+    } else if (key === 'type') {
+      current[key] = unquote(value);
+    } else if (key === 'requires_auth') {
+      current[key] = unquote(value) === 'true';
     }
   }
 
   if (current) seeds.push(current);
   return seeds;
+}
+
+function parseInlineArray(value) {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return [];
+  const inner = trimmed.slice(1, -1).trim();
+  if (!inner) return [];
+  return inner.split(',').map((item) => {
+    const s = item.trim();
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      return s.slice(1, -1);
+    }
+    return s;
+  });
 }
 
 function unquote(value) {

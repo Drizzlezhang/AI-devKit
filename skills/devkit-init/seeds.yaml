@@ -169,3 +169,65 @@ seeds:
     priority: 20
     when:
       language: "python"
+
+  # ── MCP: 文档上下文 ──
+  - name: context7-mcp
+    type: mcp
+    description: "MCP server：实时拉取版本匹配的第三方库文档，减少 API 幻觉"
+    source: "github.com/upstash/context7"
+    install: "claude mcp add --transport stdio context7 -- npx -y @upstash/context7-mcp"
+    stars: 55000
+    priority: 21
+    mcp_config:
+      transport: stdio
+      command: npx
+      args: ["-y", "@upstash/context7-mcp"]
+      scope: user
+    requires_auth: false
+
+  # ── MCP: GitHub ──
+  - name: github-mcp
+    type: mcp
+    description: "MCP server：GitHub Issues/PR/代码搜索/Actions，开发者日常必备"
+    source: "github.com/modelcontextprotocol/servers"
+    install: "claude mcp add --transport http github https://api.githubcopilot.com/mcp/"
+    stars: 40000
+    priority: 22
+    mcp_config:
+      transport: http
+      url: "https://api.githubcopilot.com/mcp/"
+      env_keys: ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+      scope: user
+    requires_auth: true
+
+  # ── MCP: Playwright 浏览器自动化 ──
+  - name: playwright-mcp
+    type: mcp
+    description: "MCP server：Playwright 浏览器自动化，UI 验证/E2E 测试/截图"
+    source: "github.com/anthropics/playwright-mcp"
+    install: "claude mcp add --transport stdio playwright -- npx -y @anthropic-ai/playwright-mcp"
+    stars: 20000
+    priority: 23
+    mcp_config:
+      transport: stdio
+      command: npx
+      args: ["-y", "@anthropic-ai/playwright-mcp"]
+      scope: project
+    requires_auth: false
+    when:
+      has_file: "package.json"
+
+  # ── MCP: Sentry 错误监控 ──
+  - name: sentry-mcp
+    type: mcp
+    description: "MCP server：Sentry 生产错误上下文，堆栈追踪/错误趋势/部署关联"
+    source: "github.com/sentry-io/sentry-mcp"
+    install: "claude mcp add --transport http sentry https://mcp.sentry.dev/mcp"
+    stars: 5000
+    priority: 24
+    mcp_config:
+      transport: http
+      url: "https://mcp.sentry.dev/mcp"
+      env_keys: ["SENTRY_AUTH_TOKEN"]
+      scope: user
+    requires_auth: true

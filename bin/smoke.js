@@ -685,6 +685,67 @@ function assertSeedRecommend(projectRoot) {
   fs.rmSync(tsRoot, { recursive: true, force: true });
   fs.rmSync(bareRoot, { recursive: true, force: true });
   fs.rmSync(largeRoot, { recursive: true, force: true });
+
+  // Scenario 8: MCP seed appears in recommendations
+  // MCP seeds have high priority (21-24) and may be outside Top 8 with normal seeds.
+  // Use a minimal seeds.yaml with only MCP entries to isolate the test.
+  const mcpSeedsYaml = [
+    'seeds:',
+    '  - name: context7-mcp',
+    '    type: mcp',
+    '    description: "MCP test"',
+    '    source: "github.com/upstash/context7"',
+    '    install: "claude mcp add --transport stdio context7 -- npx -y @upstash/context7-mcp"',
+    '    stars: 55000',
+    '    priority: 1',
+    '    mcp_config:',
+    '      transport: stdio',
+    '      command: npx',
+    '      args: ["-y", "@upstash/context7-mcp"]',
+    '      scope: user',
+    '    requires_auth: false',
+    '  - name: github-mcp',
+    '    type: mcp',
+    '    description: "GitHub MCP test"',
+    '    source: "github.com/modelcontextprotocol/servers"',
+    '    install: "claude mcp add --transport http github https://api.githubcopilot.com/mcp/"',
+    '    stars: 40000',
+    '    priority: 2',
+    '    mcp_config:',
+    '      transport: http',
+    '      url: "https://api.githubcopilot.com/mcp/"',
+    '      env_keys: ["GITHUB_PERSONAL_ACCESS_TOKEN"]',
+    '      scope: user',
+    '    requires_auth: true',
+    '',
+  ].join('\n');
+
+  const mcpRoot = path.join(path.dirname(projectRoot), 'seed-mcp-fixture');
+  fs.mkdirSync(mcpRoot, { recursive: true });
+  const mcpPkg = { name: 'mcp-test', version: '0.0.1', private: true };
+  fs.writeFileSync(path.join(mcpRoot, 'package.json'), `${JSON.stringify(mcpPkg, null, 2)}\n`, 'utf8');
+
+  const seedsBackup2 = fs.readFileSync(seedsPath, 'utf8');
+  fs.writeFileSync(seedsPath, mcpSeedsYaml, 'utf8');
+
+  const mcpOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: mcpRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(mcpOut, 'name: context7-mcp', 'MCP seed context7-mcp should appear');
+  assertIncludes(mcpOut, 'type: mcp', 'MCP seed should output type: mcp');
+
+  // Scenario 9: MCP requires_auth flag
+  assertIncludes(mcpOut, 'name: github-mcp', 'MCP seed github-mcp should appear');
+  assertIncludes(mcpOut, 'requires_auth: true', 'github-mcp should have requires_auth: true');
+
+  // Restore seeds.yaml
+  fs.writeFileSync(seedsPath, seedsBackup2, 'utf8');
+
+  // Cleanup
+  fs.rmSync(mcpRoot, { recursive: true, force: true });
 }
 
 function readRequiredFile(filePath) {

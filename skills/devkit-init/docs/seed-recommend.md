@@ -4,7 +4,7 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
 
 ## 两级推荐模型
 
-1. **精选种子**：维护在 `seeds.yaml`，由 devkit 作者人工精选，按项目特征条件匹配后优先推荐。
+1. **精选种子**：维护在 `seeds.yaml`，由 devkit 作者人工精选，按项目特征条件匹配后优先推荐。精选种子同时包含 skill 和 MCP server 两种类型。MCP 种子额外携带 `mcp_config` 配置片段和 `requires_auth` 认证标记。
 2. **find-skill 补充**：当精选种子不足以覆盖用户场景时，调用运行时的 find-skill 能力进行开放搜索作为备选。devkit 本身不实现 find-skill 调用逻辑，仅输出提示。
 
 ## 种子匹配算法
@@ -32,6 +32,12 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
 > 2. **frontend-design** ⭐134k — Anthropic 官方前端设计 skill
 >    安装：`/plugin install frontend-design@claude-plugins-official`
 >
+> 🔧 推荐 MCP Server：
+> 1. **context7-mcp** ⭐55k — 实时拉取版本匹配的库文档
+>    安装：`claude mcp add --transport stdio context7 -- npx -y @upstash/context7-mcp`
+> 2. **github-mcp** ⭐40k — GitHub Issues/PR/代码搜索 ⚠️需配置 Token
+>    安装：`claude mcp add --transport http github https://api.githubcopilot.com/mcp/`
+>
 > 💡 需要更多？使用 find-skill 搜索其他可用 Skill。
 ```
 
@@ -50,6 +56,12 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
 ## 不推荐重复已装 skill
 
 推荐列表必须排除 `project.yaml.ai_configs.installed_skills` 中已有的 skill。
+
+## MCP 推荐注意事项
+
+- `requires_auth: true` 的 MCP 需在推荐时提示用户需要配置 token
+- MCP 种子的 `install` 字段是 `claude mcp add` 命令，可直接执行
+- MCP 和 skill 共享同一个 Top 8 推荐池，按 when 条件数和 priority 统一排序
 
 ## 优雅降级
 

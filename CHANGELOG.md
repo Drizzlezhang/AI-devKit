@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `skills/devkit-init/seeds.yaml`，20 条精选种子（全部 ≥ 10k GitHub Stars），含条件匹配与安装命令。
+- `skills/devkit-init/seeds.yaml`，24 条精选种子（skill 20 条 + MCP 4 条，全部 ≥ 5k GitHub Stars），含条件匹配、安装命令与 MCP 配置片段。
 - `skills/devkit-init/docs/seed-recommend.md`，两级推荐模型文档（精选种子优先 → find-skill 备选）。
 - `bin/detect.js` 在 bootstrap / adopt 流程末尾输出 `recommended_seeds` 推荐列表，排除已装 skill。
+- MCP 种子推荐支持：seeds.yaml 新增 `type`/`mcp_config`/`requires_auth` 字段，detect.js 输出 MCP 种子的类型与认证标记。
 - `templates/STATE.md` 作为 change 级状态文件 schema 模板，并增加 `Recent Changes` 历史段。
 - `bin/render-template.js` 作为模板分段渲染的唯一入口脚本。
 - `skills/devkit-init/docs/runtime-decision.md`，定义 devkit-init 的运行时档位判定树与显式覆盖规则。
