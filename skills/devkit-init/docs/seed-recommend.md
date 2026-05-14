@@ -19,7 +19,7 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
    - `is_internal`：项目的 `byted_signals.is_internal` 等于该值则匹配
    - `when` 整体缺省 = 无条件推荐
 4. 排除 `project.yaml.ai_configs.installed_skills` 中已有的 skill。
-5. 按 `priority` 升序排序输出推荐列表。
+5. 按 `priority` 升序排序，取前 8 条输出推荐列表。
 
 ## 输出格式
 
@@ -27,16 +27,18 @@ devkit-init 的 bootstrap 和 adopt 流程末尾，执行两级推荐：精选�
 
 ```
 > 🔧 根据项目特征，推荐以下 Skills：
-> 1. **skill-name** — 描述（来源：xxx）
-> 2. **skill-name** — 描述（来源：xxx）
+> 1. **superpowers** ⭐190k — TDD + 多 agent 开发方法论
+>    安装：`npx skills add obra/superpowers`
+> 2. **frontend-design** ⭐134k — Anthropic 官方前端设计 skill
+>    安装：`/plugin install frontend-design@claude-plugins-official`
 >
-> 💡 需要更多？可使用 find-skill 搜索其他可用 Skill。
+> 💡 需要更多？使用 find-skill 搜索其他可用 Skill。
 ```
 
 当无匹配种子时：
 
 ```
-> 💡 未找到精选推荐。可使用 find-skill 搜索其他可用 Skill。
+> 💡 未找到精选推荐。使用 find-skill 搜索其他可用 Skill。
 ```
 
 ## find-skill 触发条件

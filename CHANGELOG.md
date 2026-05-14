@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `skills/devkit-init/seeds.yaml`，精选种子推荐清单，支持按 language / has_file / has_dir / scale_gte / is_internal 条件匹配。
+- `skills/devkit-init/seeds.yaml`，16 条精选种子（全部 ≥ 10k GitHub Stars），含条件匹配与安装命令。
 - `skills/devkit-init/docs/seed-recommend.md`，两级推荐模型文档（精选种子优先 → find-skill 备选）。
 - `bin/detect.js` 在 bootstrap / adopt 流程末尾输出 `recommended_seeds` 推荐列表，排除已装 skill。
 - `templates/STATE.md` 作为 change 级状态文件 schema 模板，并增加 `Recent Changes` 历史段。

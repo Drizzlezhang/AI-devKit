@@ -1,35 +1,137 @@
 seeds:
-  - name: "caveman"
-    description: "Token-efficient response mode for Claude Code — strips filler, keeps technical substance."
-    source: "内置"
-    when:
+  # ── 开发方法论 ──
+  - name: superpowers
+    description: "TDD + 多 agent 软件开发方法论：brainstorm → plan → subagent → review → merge"
+    source: "github.com/obra/superpowers"
+    install: "npx skills add obra/superpowers"
+    stars: 190000
     priority: 1
 
-  - name: "grill-me"
-    description: "需求澄清增强 — 用结构化追问把模糊需求收敛为可执行 spec。"
-    source: "内置"
-    when:
-      scale_gte: "M"
+  - name: everything-claude-code
+    description: "28 agent + 119 skill + 60 command 全能工程套件，四档安装"
+    source: "github.com/affaan-m/everything-claude-code"
+    install: "/plugin install everything-claude-code@claude-plugins-official"
+    stars: 180000
     priority: 2
 
-  - name: "tdd"
-    description: "Test-driven development workflow — write failing test first, then implement."
-    source: "内置"
-    when:
-      language: "typescript"
-      has_file: "package.json"
+  - name: andrej-karpathy-skills
+    description: "基于 Karpathy 对 LLM 编码陷阱的观察，一个 CLAUDE.md 改善代码质量"
+    source: "github.com/grp/andrej-karpathy-skills"
+    install: "npx skills add grp/andrej-karpathy-skills"
+    stars: 126000
     priority: 3
 
-  - name: "code-reviewer"
-    description: "Automated code review with severity-tagged findings and actionable fix suggestions."
-    source: "内置"
-    when:
-      has_dir: ".github"
+  # ── UI/UX 设计 ──
+  - name: frontend-design
+    description: "Anthropic 官方：反 AI slop 的前端设计 skill，推动个性化视觉风格"
+    source: "github.com/anthropics/skills"
+    install: "/plugin install frontend-design@claude-plugins-official"
+    stars: 134000
     priority: 4
-
-  - name: "security-scanner"
-    description: "OWASP-aware security scan — flags injection, XSS, and credential leaks in code changes."
-    source: "内置"
     when:
-      is_internal: true
+      has_file: "package.json"
+
+  - name: ui-ux-pro-max
+    description: "多平台专业 UI/UX 设计智能，覆盖 Web/iOS/Android/Desktop"
+    source: "github.com/ipenywis/ui-ux-pro-max-skill"
+    install: "npx skills add ipenywis/ui-ux-pro-max-skill"
+    stars: 77000
     priority: 5
+    when:
+      has_file: "package.json"
+
+  # ── 跨会话记忆 ──
+  - name: claude-mem
+    description: "跨会话持久化记忆：自动捕获 → AI 压缩 → 向量搜索注入未来会话"
+    source: "github.com/thedotmack/claude-mem"
+    install: "npx claude-mem install"
+    stars: 75000
+    priority: 6
+
+  # ── Token 优化 ──
+  - name: caveman
+    description: "用简化语法减少 65% token 消耗，显著降低 API 成本"
+    source: "github.com/juliusbrussee/caveman"
+    install: "/plugin install caveman"
+    stars: 58000
+    priority: 7
+
+  # ── 文档上下文 ──
+  - name: context7
+    description: "实时拉取版本匹配的第三方库文档到 LLM 上下文，减少幻觉"
+    source: "github.com/upstash/context7"
+    install: "/plugin install context7@claude-plugins-official"
+    stars: 55000
+    priority: 8
+
+  # ── 敏捷方法论 ──
+  - name: bmad-method
+    description: "AI 驱动敏捷开发方法论：Breakthrough Method for Agile AI-Driven Development"
+    source: "github.com/bmad-method/BMAD-METHOD"
+    install: "npx skills add bmad-method/BMAD-METHOD"
+    stars: 47000
+    priority: 9
+    when:
+      scale_gte: "M"
+
+  # ── 浏览器调试 ──
+  - name: chrome-devtools-mcp
+    description: "在 agent 中控制 Chrome DevTools：性能追踪/网络分析/控制台/Puppeteer"
+    source: "github.com/anthropics/chrome-devtools-mcp"
+    install: "/plugin install chrome-devtools-mcp@claude-plugins-official"
+    stars: 39000
+    priority: 10
+    when:
+      has_file: "package.json"
+
+  # ── 文档处理（官方） ──
+  - name: document-skills
+    description: "Anthropic 官方文档 skill：PDF/DOCX/XLSX/PPTX 创建/解析/编辑"
+    source: "github.com/anthropics/skills"
+    install: "/plugin install document-skills@anthropic-agent-skills"
+    stars: 134000
+    priority: 11
+
+  # ── 代码打包 ──
+  - name: repomix
+    description: "将整个仓库打包为单个 AI 友好文件，适配所有主流 LLM"
+    source: "github.com/yamadashy/repomix"
+    install: "/plugin install repomix@claude-plugins-official"
+    stars: 25000
+    priority: 12
+
+  # ── AI 测试 ──
+  - name: promptfoo
+    description: "Prompt/Agent/RAG 测试框架 + 红队安全扫描，OpenAI/Anthropic 都在用"
+    source: "github.com/promptfoo/promptfoo"
+    install: "/plugin install promptfoo@claude-plugins-official"
+    stars: 21000
+    priority: 13
+    when:
+      scale_gte: "M"
+
+  # ── Markdown 规划 ──
+  - name: planning-with-files
+    description: "Manus 风格持久化 markdown 规划工作流"
+    source: "github.com/planning-with-files/planning-with-files"
+    install: "npx skills add planning-with-files/planning-with-files"
+    stars: 21000
+    priority: 14
+
+  # ── PPT 生成 ──
+  - name: ppt-master
+    description: "AI 生成原生可编辑 PPTX：真实 PowerPoint 形状 + 原生动画"
+    source: "github.com/ppt-master/ppt-master"
+    install: "npx skills add ppt-master/ppt-master"
+    stars: 15000
+    priority: 15
+
+  # ── ML/AI 生态 ──
+  - name: huggingface-skills
+    description: "Hugging Face 生态 skill：训练/评估/部署开源 AI 模型"
+    source: "github.com/huggingface/skills"
+    install: "/plugin install huggingface-skills@claude-plugins-official"
+    stars: 10000
+    priority: 16
+    when:
+      language: "python"

@@ -65,12 +65,14 @@ function main() {
   console.log(`internal: ${analysis.byted_signals.is_internal ? 'yes' : 'no'}`);
 
   const seeds = recommendSeeds(process.cwd(), analysis);
+  console.log('find_skill_hint: true');
   if (seeds.length > 0) {
     console.log('recommended_seeds:');
     for (const seed of seeds) {
       console.log(`  - name: ${seed.name}`);
       console.log(`    description: ${seed.description}`);
-      console.log(`    source: ${seed.source}`);
+      console.log(`    install: ${seed.install || seed.source}`);
+      console.log(`    stars: ${seed.stars || 0}`);
     }
   } else {
     console.log('recommended_seeds: []');
@@ -135,8 +137,14 @@ function recommendSeeds(rootDir, projectMeta) {
     return true;
   });
 
-  matched.sort((a, b) => (a.priority || 99) - (b.priority || 99));
-  return matched;
+  // Sort: seeds with more when conditions first (more specific), then by priority
+  matched.sort((a, b) => {
+    const aCondCount = Object.keys(a.when || {}).length;
+    const bCondCount = Object.keys(b.when || {}).length;
+    if (aCondCount !== bCondCount) return bCondCount - aCondCount;
+    return (a.priority || 99) - (b.priority || 99);
+  });
+  return matched.slice(0, 8);
 }
 
 function parseSeedsYaml(content) {
@@ -178,6 +186,10 @@ function parseSeedsYaml(content) {
       current.when[key] = (key === 'is_internal') ? unquote(value) === 'true' : unquote(value);
     } else if (key === 'description' || key === 'source') {
       current[key] = unquote(value);
+    } else if (key === 'install') {
+      current[key] = unquote(value);
+    } else if (key === 'stars') {
+      current[key] = Number(unquote(value)) || 0;
     } else if (key === 'priority') {
       current[key] = Number(unquote(value)) || 99;
     }

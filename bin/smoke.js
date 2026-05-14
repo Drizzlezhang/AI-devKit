@@ -557,7 +557,7 @@ function assertSeedRecommend(projectRoot) {
   const detectPath = path.join(ROOT, 'bin', 'detect.js');
   const env = { ...process.env };
 
-  // Scenario 1: TypeScript project (has package.json, language includes typescript) → matches tdd seed
+  // Scenario 1: TS project (has package.json) → matches frontend-design seed (has_file: package.json)
   const tsRoot = path.join(path.dirname(projectRoot), 'seed-ts-fixture');
   fs.mkdirSync(tsRoot, { recursive: true });
   const tsPkg = { name: 'seed-ts-test', version: '0.0.1', private: true, dependencies: { typescript: '^5.0.0', react: '^18.0.0' } };
@@ -570,13 +570,17 @@ function assertSeedRecommend(projectRoot) {
     env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
   });
   assertIncludes(tsOut, 'recommended_seeds:', 'TS project should have recommended_seeds section');
-  assertIncludes(tsOut, 'name: tdd', 'TS project should match tdd seed');
+  assertIncludes(tsOut, 'name: frontend-design', 'TS project should match frontend-design seed');
 
   // Scenario 2: unconditional seed (caveman) always appears
   assertIncludes(tsOut, 'name: caveman', 'caveman (unconditional seed) should always appear');
 
+  // Verify new output fields
+  assertIncludes(tsOut, 'install:', 'recommended output should include install field');
+  assertIncludes(tsOut, 'stars:', 'recommended output should include stars field');
+  assertIncludes(tsOut, 'find_skill_hint: true', 'recommended output should include find_skill_hint');
+
   // Scenario 3: already-installed skill not recommended
-  // Run install to add skills, then run detect again — installed skills should be excluded
   const installPath = path.join(ROOT, 'bin', 'install.js');
   childProcess.execFileSync(process.execPath, [installPath, '--project'], {
     cwd: tsRoot,
@@ -589,12 +593,10 @@ function assertSeedRecommend(projectRoot) {
     encoding: 'utf8',
     env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
   });
-  // devkit-init and devkit-go are installed, but they aren't in seeds so we check:
-  // caveman and tdd are NOT installed so they should still appear
   assertIncludes(installedOut, 'name: caveman', 'caveman should still appear (not in installed_skills)');
-  assertIncludes(installedOut, 'name: tdd', 'tdd should still appear (not in installed_skills)');
+  assertIncludes(installedOut, 'name: frontend-design', 'frontend-design should still appear (not in installed_skills)');
 
-  // Now add caveman to installed_skills manually and verify exclusion
+  // Add caveman to installed_skills manually and verify exclusion
   const yamlPath = path.join(tsRoot, '.devkit', 'project.yaml');
   let yamlContent = fs.readFileSync(yamlPath, 'utf8');
   yamlContent = yamlContent.replace('installed_skills: [devkit-go, devkit-init]', 'installed_skills: [caveman, devkit-go, devkit-init]');
@@ -613,10 +615,9 @@ function assertSeedRecommend(projectRoot) {
   const barePkg = { name: 'seed-bare-test', version: '0.0.1', private: true };
   fs.writeFileSync(path.join(bareRoot, 'package.json'), `${JSON.stringify(barePkg, null, 2)}\n`, 'utf8');
 
-  // Remove seeds.yaml temporarily to simulate no matches
   const seedsPath = path.join(ROOT, 'skills', 'devkit-init', 'seeds.yaml');
   const seedsBackup = fs.readFileSync(seedsPath, 'utf8');
-  fs.writeFileSync(seedsPath, 'seeds:\n  - name: "only-internal"\n    description: "test"\n    source: "test"\n    when:\n      is_internal: true\n    priority: 1\n', 'utf8');
+  fs.writeFileSync(seedsPath, 'seeds:\n  - name: "only-internal"\n    description: "test"\n    source: "test"\n    install: "npx test"\n    stars: 100\n    when:\n      is_internal: true\n    priority: 1\n', 'utf8');
 
   const bareOut = childProcess.execFileSync(process.execPath, [detectPath], {
     cwd: bareRoot,
@@ -638,15 +639,52 @@ function assertSeedRecommend(projectRoot) {
     encoding: 'utf8',
     env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
   });
-  // Should not crash, and should output empty recommended_seeds or skip it
   assertIncludes(malformedOut, 'project:', 'malformed seeds.yaml should not block bootstrap');
 
   // Restore seeds.yaml
   fs.writeFileSync(seedsPath, seedsBackup, 'utf8');
 
+  // Scenario 6: scale_gte match — create a large project to get scale=M or L
+  const largeRoot = path.join(path.dirname(projectRoot), 'seed-large-fixture');
+  fs.mkdirSync(largeRoot, { recursive: true });
+  const largePkg = { name: 'seed-large-test', version: '0.0.1', private: true };
+  fs.writeFileSync(path.join(largeRoot, 'package.json'), `${JSON.stringify(largePkg, null, 2)}\n`, 'utf8');
+  // Create enough files to push scale to M (need ~15000 loc or ~38 modules)
+  const srcDir = path.join(largeRoot, 'src');
+  fs.mkdirSync(srcDir, { recursive: true });
+  for (let i = 0; i < 40; i++) {
+    const lines = [];
+    for (let j = 0; j < 400; j++) lines.push(`export const mod${i}_line${j} = ${j};`);
+    fs.writeFileSync(path.join(srcDir, `module${i}.js`), lines.join('\n'), 'utf8');
+  }
+  const largeOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: largeRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(largeOut, 'name: bmad-method', 'large project should match bmad-method (scale_gte: M)');
+  assertIncludes(largeOut, 'name: promptfoo', 'large project should match promptfoo (scale_gte: M)');
+
+  // Scenario 7: scale_gte no match — small project, verify bmad-method and promptfoo excluded
+  fs.writeFileSync(seedsPath, seedsBackup, 'utf8');
+  // bareRoot already has a minimal package.json, scale will be XS
+  // Remove cached project.yaml to force rescan with current seeds
+  const bareYamlPath = path.join(bareRoot, '.devkit', 'project.yaml');
+  if (fs.existsSync(bareYamlPath)) fs.rmSync(bareYamlPath);
+  const smallOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: bareRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertNotIncludes(smallOut, 'name: bmad-method', 'small project should not match bmad-method');
+  assertNotIncludes(smallOut, 'name: promptfoo', 'small project should not match promptfoo');
+
   // Cleanup
   fs.rmSync(tsRoot, { recursive: true, force: true });
   fs.rmSync(bareRoot, { recursive: true, force: true });
+  fs.rmSync(largeRoot, { recursive: true, force: true });
 }
 
 function readRequiredFile(filePath) {
