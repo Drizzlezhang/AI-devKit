@@ -129,3 +129,14 @@
 - 如涉及配置文件修改，说明需要回滚哪些文件与字段
 
 如果自动回滚风险较高，你必须明确说明原因，并先征求用户确认。
+
+## 标记块协议
+
+DevKit 写入 `CLAUDE.md` 时使用标记块隔离受管内容与用户手写内容：
+
+- 受管块由 `<!-- devkit-managed:start version=N generated_at=ISO8601 -->` 与 `<!-- devkit-managed:end -->` 包裹
+- 标记块外为用户手写区域，DevKit 永不修改
+- 标记块内内容在安装/同步时由 `install.js` 的 `writeManagedBlock` 函数整体替换
+- 标记块损坏（start/end 不配对）时报错并指出行号，不静默修复
+- 已有 `CLAUDE.md` 但无标记块时，追加受管块到文件末尾，不覆盖原文
+- 已有 `CLAUDE.md` 且已有标记块时，只替换块内内容

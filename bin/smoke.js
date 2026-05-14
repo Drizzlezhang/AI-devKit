@@ -25,6 +25,9 @@ function main() {
     assertTemplateCopies(projectRoot);
     assertRenderCli(projectRoot);
     assertMissingTemplateFails(projectRoot);
+    assertDetectTiers(projectRoot);
+    assertManagedBlock(projectRoot);
+    assertAuditDrift(projectRoot);
     console.log('PASS');
   } catch (error) {
     console.error(`FAIL: ${error.message}`);
@@ -331,6 +334,222 @@ function assertMissingTemplateFails(projectRoot) {
   if (!failed) {
     throw new Error('missing template check did not report REQUIREMENT.md');
   }
+}
+
+function assertDetectTiers(projectRoot) {
+  const detectPath = path.join(ROOT, 'bin', 'detect.js');
+  const env = { ...process.env };
+
+  // bootstrap: default behavior, writes project.yaml
+  const bootstrapOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: projectRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(bootstrapOut, 'project:', 'bootstrap tier should output project info');
+
+  const yamlPath = path.join(projectRoot, '.devkit', 'project.yaml');
+  const yamlContent = readRequiredFile(yamlPath);
+  assertIncludes(yamlContent, 'managed_by: devkit', 'bootstrap should set managed_by: devkit');
+
+  // silent: reads yaml, outputs one-line summary, no file write
+  const yamlMtimeBefore = fs.statSync(yamlPath).mtimeMs;
+  const silentOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: projectRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'silent' },
+  });
+  const yamlMtimeAfter = fs.statSync(yamlPath).mtimeMs;
+  assertIncludes(silentOut, 'DevKit OK', 'silent tier should output OK summary');
+  if (silentOut.trim().split('\n').length !== 1) {
+    throw new Error('silent tier should output single line');
+  }
+  if (yamlMtimeBefore !== yamlMtimeAfter) {
+    throw new Error('silent tier should not write files');
+  }
+
+  // audit: outputs drift report, no file write
+  const auditOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: projectRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'audit' },
+  });
+  assertIncludes(auditOut, 'DevKit Audit Report', 'audit tier should output audit report');
+  assertIncludes(auditOut, '## Drift', 'audit tier should include Drift section');
+  const yamlMtimeAfterAudit = fs.statSync(yamlPath).mtimeMs;
+  if (yamlMtimeAfter !== yamlMtimeAfterAudit) {
+    throw new Error('audit tier should not write files');
+  }
+
+  // adopt: writes yaml with managed_by: user
+  childProcess.execFileSync(process.execPath, [detectPath, '--refresh'], {
+    cwd: projectRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'adopt' },
+  });
+  const adoptYamlContent = readRequiredFile(yamlPath);
+  assertIncludes(adoptYamlContent, 'managed_by: user', 'adopt tier should set managed_by: user');
+
+  // default (no env): same as bootstrap
+  childProcess.execFileSync(process.execPath, [detectPath, '--refresh'], {
+    cwd: projectRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: '' },
+  });
+  const defaultYamlContent = readRequiredFile(yamlPath);
+  assertIncludes(defaultYamlContent, 'managed_by: devkit', 'default (no tier env) should set managed_by: devkit');
+}
+
+function assertManagedBlock(projectRoot) {
+  const installPath = path.join(ROOT, 'bin', 'install.js');
+
+  // Scenario 1: fresh project install creates CLAUDE.md with managed block
+  const freshRoot = path.join(path.dirname(projectRoot), 'fresh-fixture');
+  fs.mkdirSync(freshRoot, { recursive: true });
+  const freshPackageJson = { name: 'fresh-test', version: '0.0.1', private: true };
+  fs.writeFileSync(path.join(freshRoot, 'package.json'), `${JSON.stringify(freshPackageJson, null, 2)}\n`, 'utf8');
+
+  childProcess.execFileSync(process.execPath, [installPath, '--project'], {
+    cwd: freshRoot,
+    stdio: 'pipe',
+    env: { ...process.env },
+  });
+
+  const freshClaudeMdPath = path.join(freshRoot, 'CLAUDE.md');
+  assertIncludes(readRequiredFile(freshClaudeMdPath), '<!-- devkit-managed:start', 'fresh install should create managed block start');
+  assertIncludes(readRequiredFile(freshClaudeMdPath), '<!-- devkit-managed:end -->', 'fresh install should create managed block end');
+  assertIncludes(readRequiredFile(freshClaudeMdPath), '### Installed Skills', 'fresh install managed block should contain skills section');
+
+  // Scenario 2: existing CLAUDE.md without block — append block, preserve user content
+  const adoptRoot = path.join(path.dirname(projectRoot), 'adopt-fixture');
+  fs.mkdirSync(adoptRoot, { recursive: true });
+  fs.writeFileSync(path.join(adoptRoot, 'package.json'), `${JSON.stringify(freshPackageJson, null, 2)}\n`, 'utf8');
+  const userContent = '# My Project\n\nThis is my custom CLAUDE.md content.\n';
+  fs.writeFileSync(path.join(adoptRoot, 'CLAUDE.md'), userContent, 'utf8');
+
+  childProcess.execFileSync(process.execPath, [installPath, '--project'], {
+    cwd: adoptRoot,
+    stdio: 'pipe',
+    env: { ...process.env },
+  });
+
+  const adoptClaudeMd = readRequiredFile(path.join(adoptRoot, 'CLAUDE.md'));
+  assertIncludes(adoptClaudeMd, userContent.trimEnd(), 'adopt should preserve user content before block');
+  assertIncludes(adoptClaudeMd, '<!-- devkit-managed:start', 'adopt should append managed block');
+
+  // Scenario 3: reinstall — only block content changes, user content untouched
+  const userBeforeBlock = adoptClaudeMd.split('<!-- devkit-managed:start')[0];
+  childProcess.execFileSync(process.execPath, [installPath, '--project'], {
+    cwd: adoptRoot,
+    stdio: 'pipe',
+    env: { ...process.env },
+  });
+  const reinstallClaudeMd = readRequiredFile(path.join(adoptRoot, 'CLAUDE.md'));
+  const userAfterBlock = reinstallClaudeMd.split('<!-- devkit-managed:start')[0];
+  if (userBeforeBlock !== userAfterBlock) {
+    throw new Error('reinstall should not modify content outside managed block');
+  }
+
+  // Scenario 4: broken block — unclosed start marker should error
+  const brokenRoot = path.join(path.dirname(projectRoot), 'broken-fixture');
+  fs.mkdirSync(brokenRoot, { recursive: true });
+  fs.writeFileSync(path.join(brokenRoot, 'package.json'), `${JSON.stringify(freshPackageJson, null, 2)}\n`, 'utf8');
+  const brokenContent = '# Broken\n\n<!-- devkit-managed:start version=1 generated_at=2026-01-01T00:00:00Z -->\n## DevKit\n';
+  fs.writeFileSync(path.join(brokenRoot, 'CLAUDE.md'), brokenContent, 'utf8');
+
+  let brokenFailed = false;
+  try {
+    childProcess.execFileSync(process.execPath, [installPath, '--project'], {
+      cwd: brokenRoot,
+      stdio: 'pipe',
+      env: { ...process.env },
+    });
+  } catch (error) {
+    brokenFailed = /Unclosed managed block|out of order/.test(String(error.stderr || error.message));
+  }
+
+  if (!brokenFailed) {
+    throw new Error('install should fail on unclosed managed block');
+  }
+
+  // Cleanup
+  fs.rmSync(freshRoot, { recursive: true, force: true });
+  fs.rmSync(adoptRoot, { recursive: true, force: true });
+  fs.rmSync(brokenRoot, { recursive: true, force: true });
+}
+
+function assertAuditDrift(projectRoot) {
+  const detectPath = path.join(ROOT, 'bin', 'detect.js');
+  const env = { ...process.env };
+  const installPath = path.join(ROOT, 'bin', 'install.js');
+
+  // Setup a fixture with installed skills
+  const auditRoot = path.join(path.dirname(projectRoot), 'audit-fixture');
+  fs.mkdirSync(auditRoot, { recursive: true });
+  const pkg = { name: 'audit-test', version: '0.0.1', private: true };
+  fs.writeFileSync(path.join(auditRoot, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+
+  childProcess.execFileSync(process.execPath, [installPath, '--project'], {
+    cwd: auditRoot,
+    stdio: 'pipe',
+    env: { ...process.env },
+  });
+
+  // Test 1: delete SKILL.md → audit reports high "missing file"
+  const devkitGoSkillMd = path.join(auditRoot, '.claude', 'skills', 'devkit-go', 'SKILL.md');
+  const backupSkillMd = fs.readFileSync(devkitGoSkillMd, 'utf8');
+  fs.rmSync(devkitGoSkillMd);
+
+  const auditMissing = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: auditRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'audit' },
+  });
+  assertIncludes(auditMissing, 'SKILL.md missing', 'audit should report high: SKILL.md missing');
+  assertIncludes(auditMissing, '高(必须修复)', 'audit should have high-severity section');
+
+  // Restore SKILL.md
+  fs.writeFileSync(devkitGoSkillMd, backupSkillMd, 'utf8');
+
+  // Test 2: change trigger: manual → trigger: auto → audit reports high
+  const tamperedContent = backupSkillMd.replace('trigger: manual', 'trigger: auto');
+  fs.writeFileSync(devkitGoSkillMd, tamperedContent, 'utf8');
+
+  const auditTrigger = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: auditRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'audit' },
+  });
+  assertIncludes(auditTrigger, 'trigger', 'audit should report trigger drift');
+
+  // Restore
+  fs.writeFileSync(devkitGoSkillMd, backupSkillMd, 'utf8');
+
+  // Test 3: CLAUDE.md managed block missing entirely → audit reports medium
+  const claudeMdPath = path.join(auditRoot, 'CLAUDE.md');
+  const claudeMdContent = readRequiredFile(claudeMdPath);
+  // Remove entire managed block to trigger drift
+  const noBlockContent = claudeMdContent.replace(/<!--\s*devkit-managed:start[\s\S]*?<!--\s*devkit-managed:end\s*-->\n?/, '').trimEnd() + '\n';
+  fs.writeFileSync(claudeMdPath, noBlockContent, 'utf8');
+
+  const auditBlock = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: auditRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'audit' },
+  });
+  assertIncludes(auditBlock, 'managed block', 'audit should report CLAUDE.md managed block drift');
+  assertIncludes(auditBlock, '中(建议修复)', 'audit should have medium-severity section');
+
+  // Cleanup
+  fs.rmSync(auditRoot, { recursive: true, force: true });
 }
 
 function readRequiredFile(filePath) {

@@ -250,6 +250,123 @@ function recordInstalledSkills(projectRoot, skillNames) {
   });
 }
 
+const MANAGED_START_RE = /<!--\s*devkit-managed:start\s+version=\d+\s+generated_at=[^\s>]+\s*-->/;
+const MANAGED_END_RE = /<!--\s*devkit-managed:end\s*-->/;
+
+function writeManagedBlockForProject(projectRoot, skillNames) {
+  const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
+  const blockContent = renderManagedBlock(skillNames);
+
+  if (!fs.existsSync(claudeMdPath)) {
+    const templatePath = path.join(ROOT, 'templates', 'CLAUDE.md');
+    if (fs.existsSync(templatePath)) {
+      const template = fs.readFileSync(templatePath, 'utf8');
+      const filled = template
+        .replace('<ISO8601>', new Date().toISOString())
+        .replace('<!-- 此处由 install.js 按 project.yaml.ai_configs.installed_skills 动态填充 -->\n- devkit-init: project bootstrap, audit, adopt\n- devkit-go: 7-stage development workflow', blockContent.trim());
+      fs.writeFileSync(claudeMdPath, filled, 'utf8');
+    }
+    return;
+  }
+
+  const existing = fs.readFileSync(claudeMdPath, 'utf8');
+  const startMatch = existing.match(MANAGED_START_RE);
+  const endMatch = existing.match(MANAGED_END_RE);
+
+  if (startMatch && endMatch) {
+    const startIdx = existing.indexOf(startMatch[0]);
+    const endIdx = existing.indexOf(endMatch[0]);
+
+    if (endIdx < startIdx) {
+      const startLine = existing.split(/\r?\n/).findIndex((l) => MANAGED_START_RE.test(l)) + 1;
+      throw new Error(`Managed block markers out of order: start at line ${startLine}, end appears before start. Refusing to modify.`);
+    }
+
+    const before = existing.slice(0, startIdx);
+    const after = existing.slice(endIdx + endMatch[0].length);
+    const newBlock = `<!-- devkit-managed:start version=1 generated_at=${new Date().toISOString()} -->\n${blockContent}<!-- devkit-managed:end -->`;
+    fs.writeFileSync(claudeMdPath, `${before}${newBlock}${after}`, 'utf8');
+    return;
+  }
+
+  if (startMatch && !endMatch) {
+    const startLine = existing.split(/\r?\n/).findIndex((l) => MANAGED_START_RE.test(l)) + 1;
+    throw new Error(`Unclosed managed block at line ${startLine}. Missing <!-- devkit-managed:end -->. Refusing to modify.`);
+  }
+
+  if (!startMatch && endMatch) {
+    const endLine = existing.split(/\r?\n/).findIndex((l) => MANAGED_END_RE.test(l)) + 1;
+    throw new Error(`Stray managed block end marker at line ${endLine}. Missing <!-- devkit-managed:start -->. Refusing to modify.`);
+  }
+
+  const appended = `${existing.trimEnd()}\n\n<!-- devkit-managed:start version=1 generated_at=${new Date().toISOString()} -->\n${blockContent}<!-- devkit-managed:end -->\n`;
+  fs.writeFileSync(claudeMdPath, appended, 'utf8');
+}
+
+function renderManagedBlock(skillNames) {
+  const lines = [];
+
+  lines.push('## DevKit Configuration');
+  lines.push('');
+  lines.push('This section is managed by `devkit-init`. Do not edit manually.');
+  lines.push('');
+  lines.push('### Installed Skills');
+  for (const name of skillNames) {
+    if (name === 'devkit-init') {
+      lines.push('- devkit-init: project bootstrap, audit, adopt');
+    } else if (name === 'devkit-go') {
+      lines.push('- devkit-go: 7-stage development workflow');
+    } else {
+      lines.push(`- ${name}`);
+    }
+  }
+  lines.push('');
+
+  const yamlPath = path.join(process.cwd(), '.devkit', 'project.yaml');
+  if (fs.existsSync(yamlPath)) {
+    const yamlContent = fs.readFileSync(yamlPath, 'utf8');
+    const parsed = parseSimpleYaml(yamlContent);
+
+    lines.push('### Project Meta');
+    const lang = parsed.language || 'unknown';
+    const scale = parsed.scale || 'XS';
+    const internal = parsed.is_internal ? 'true' : 'false';
+    lines.push(`- language: ${lang}`);
+    lines.push(`- scale: ${scale}`);
+    lines.push(`- internal: ${internal}`);
+    lines.push('');
+  }
+
+  lines.push('### Workflow Conventions');
+  lines.push('- 触发 devkit-go 进入 7 阶段流程');
+  lines.push('- _meta.yaml schema_version: 2');
+  lines.push('- STATE.md 字段顺序锁定(详见 templates/STATE.md)');
+
+  return `${lines.join('\n')}\n`;
+}
+
+function parseSimpleYaml(content) {
+  const result = {};
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const index = line.indexOf(':');
+    if (index === -1) continue;
+    const key = line.slice(0, index).trim();
+    const rawValue = line.slice(index + 1).trim();
+    if (rawValue === '[]') {
+      result[key] = [];
+    } else if (/^-?\d+$/.test(rawValue)) {
+      result[key] = Number(rawValue);
+    } else if ((rawValue.startsWith('"') && rawValue.endsWith('"')) || (rawValue.startsWith("'") && rawValue.endsWith("'"))) {
+      result[key] = rawValue.slice(1, -1);
+    } else {
+      result[key] = rawValue;
+    }
+  }
+  return result;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
@@ -280,6 +397,7 @@ async function main() {
 
   if (scope === 'project') {
     recordInstalledSkills(process.cwd(), installedSkillNames);
+    writeManagedBlockForProject(process.cwd(), installedSkillNames);
   }
 
   console.log('ai-devkit installation complete.');

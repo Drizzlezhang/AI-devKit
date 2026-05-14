@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `templates/STATE.md` 作为 change 级状态文件 schema 模板，并增加 `Recent Changes` 历史段。
 - `bin/render-template.js` 作为模板分段渲染的唯一入口脚本。
+- `skills/devkit-init/docs/runtime-decision.md`，定义 devkit-init 的运行时档位判定树与显式覆盖规则。
+- `templates/CLAUDE.md`，带 `<!-- devkit-managed:start -->` ~ `<!-- devkit-managed:end -->` 标记块的模板。
+- `skills/devkit-init/docs/adopt-flow.md`，描述接入档位的合并流程与边界规则。
 
 ### Changed
 - `devkit-go` 的状态管理文档与各阶段退出检查清单统一要求维护 `STATE.md.Recent Changes`。
@@ -19,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 模板分段语义收敛到 `bin/render-template.js`，相关 stage 文档改为引用统一渲染规则与阶段切换仪式。
 - `REQUIREMENT.md` 的验收标准升级为 `AC | 验证方式` 对账格式，`VERIFICATION.md` 与 SPEC/VERIFY 文档同步要求按该列执行验证。
 - `devkit-go` 的 gate matrix 收敛为按 Size 分级：M 默认仅强制 `post-spec` 与 `pre-commit`，L 保持完整 gate。
+- `devkit-init` 入口改为先做运行时档位判定，再按首装 / 接入 / 巡检 / 静默分支执行。
+- `bin/detect.js` 通过环境变量 `DEVKIT_INIT_TIER` 支持 `bootstrap` / `adopt` / `audit` / `silent` 四种行为，默认 `bootstrap` 保持向下兼容。
+- `project.yaml` 新增 `ai_configs.managed_by` 字段，`adopt` 模式下值为 `user`。
+- `bin/install.js` 新增 `writeManagedBlock` 函数，所有 CLAUDE.md 写入走标记块协议，不覆盖用户手写区域。
+- `skills/devkit-init/docs/install-planning.md` 增加"标记块协议"段。
+- `bin/detect.js` audit 模式增加 skill 健康度检测与漂移分级（高/中/低），并检查 `CLAUDE.md` 标记块一致性。
+- `skills/devkit-init/docs/runtime-decision.md` 增加"漂移分级与修复策略"段。
+- `skills/devkit-init/docs/redundancy-policy.md` 增补接入档位例外：用户已装 skill 视为白名单。
 
 ## [0.1.2] - 2026-05-13
 

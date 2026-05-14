@@ -13,6 +13,8 @@ const CODE_EXTENSIONS = new Set([
   '.sh', '.bash', '.zsh', '.rb', '.php', '.cs', '.cpp', '.cc', '.c', '.h', '.hpp',
 ]);
 
+const VALID_TIERS = new Set(['bootstrap', 'adopt', 'audit', 'silent']);
+
 function main() {
   const command = process.argv[2];
   if (command === 'record-install') {
@@ -20,9 +22,21 @@ function main() {
     return;
   }
 
+  const tier = VALID_TIERS.has(process.env.DEVKIT_INIT_TIER) ? process.env.DEVKIT_INIT_TIER : 'bootstrap';
   const forceRefresh = process.argv.includes('--refresh');
   const existing = readExistingProjectFile(PROJECT_FILE);
+
+  if (tier === 'silent') {
+    runSilent(existing);
+    return;
+  }
+
   const currentFingerprint = collectFingerprint(process.cwd());
+
+  if (tier === 'audit') {
+    runAudit(existing, currentFingerprint);
+    return;
+  }
 
   if (!forceRefresh && existing) {
     const invalidReason = getInvalidReason(existing, currentFingerprint);
@@ -41,7 +55,7 @@ function main() {
     console.log('refresh requested, rescan');
   }
 
-  const analysis = analyzeProject(process.cwd(), currentFingerprint, existing);
+  const analysis = analyzeProject(process.cwd(), currentFingerprint, existing, tier);
   writeProjectFile(PROJECT_FILE, analysis);
 
   console.log(`project: ${analysis.project.name}`);
@@ -49,6 +63,172 @@ function main() {
   console.log(`languages: ${analysis.project.language.join(', ') || 'unknown'}`);
   console.log(`frameworks: ${analysis.project.framework.join(', ') || 'none'}`);
   console.log(`internal: ${analysis.byted_signals.is_internal ? 'yes' : 'no'}`);
+}
+
+function runSilent(existing) {
+  if (!existing) {
+    console.log('DevKit: no config found');
+    return;
+  }
+
+  const name = existing.project.name || path.basename(process.cwd());
+  const skillCount = (existing.ai_configs && Array.isArray(existing.ai_configs.installed_skills))
+    ? existing.ai_configs.installed_skills.length : 0;
+  const scannedAt = existing.scanned_at ? timeAgo(existing.scanned_at) : 'unknown';
+
+  console.log(`DevKit OK · ${skillCount} skill${skillCount !== 1 ? 's' : ''} · scanned ${scannedAt}`);
+}
+
+function runAudit(existing, currentFingerprint) {
+  if (!existing) {
+    console.log('DevKit Audit Report');
+    console.log('==================');
+    console.log('');
+    console.log('No .devkit/project.yaml found. Run bootstrap first.');
+    return;
+  }
+
+  const name = existing.project.name || path.basename(process.cwd());
+  const rootDir = process.cwd();
+  const lines = [];
+
+  lines.push(`DevKit Audit Report — ${new Date().toISOString()}`);
+  lines.push('================================');
+  lines.push('');
+  lines.push('## Project Meta');
+
+  const driftItems = [];
+
+  const fpKeys = ['package_json_hash', 'lockfile_hash', 'go_mod_hash', 'pyproject_hash', 'git_remote'];
+  for (const key of fpKeys) {
+    const oldVal = existing.fingerprint[key] || '';
+    const newVal = currentFingerprint[key] || '';
+    if (oldVal !== newVal) {
+      driftItems.push(`fingerprint.${key} changed`);
+    }
+  }
+
+  lines.push(`- name: ${name}`);
+  lines.push(`- language: ${(existing.project.language || []).join(', ') || 'unknown'} ${driftItems.length > 0 ? '⚠️ fingerprint drift' : '[unchanged]'}`);
+  lines.push(`- scale: ${existing.project.scale || 'XS'}`);
+  lines.push(`- internal: ${existing.byted_signals && existing.byted_signals.is_internal ? 'yes' : 'no'}`);
+  lines.push('');
+
+  // Skill health checks
+  const installedSkills = (existing.ai_configs && Array.isArray(existing.ai_configs.installed_skills))
+    ? existing.ai_configs.installed_skills : [];
+  const highDrift = [];
+  const mediumDrift = [];
+  const lowDrift = [];
+
+  lines.push(`## Installed Skills (${installedSkills.length})`);
+  for (const skill of installedSkills) {
+    const skillDir = path.join(rootDir, '.claude', 'skills', skill);
+    const skillMdPath = path.join(skillDir, 'SKILL.md');
+    let status = '[up-to-date]';
+
+    if (!fs.existsSync(skillMdPath)) {
+      status = '⚠️ SKILL.md missing';
+      highDrift.push(`skills/${skill}/SKILL.md missing file`);
+    } else {
+      const skillContent = fs.readFileSync(skillMdPath, 'utf8');
+      if (!/trigger:\s*manual/.test(skillContent)) {
+        status = '⚠️ trigger not manual';
+        highDrift.push(`skills/${skill}/SKILL.md trigger: manual missing or changed`);
+      }
+      if (!/^---[\s\S]*?^name:/m.test(skillContent) || !/^---[\s\S]*?^description:/m.test(skillContent)) {
+        status = '⚠️ frontmatter incomplete';
+        mediumDrift.push(`skills/${skill}/SKILL.md frontmatter missing name or description`);
+      }
+    }
+
+    lines.push(`- ${skill}  ${status}`);
+  }
+  lines.push('');
+
+  // CLAUDE.md managed block consistency
+  const claudeMdPath = path.join(rootDir, 'CLAUDE.md');
+  if (fs.existsSync(claudeMdPath)) {
+    const claudeMd = fs.readFileSync(claudeMdPath, 'utf8');
+    const hasStart = /<!--\s*devkit-managed:start/.test(claudeMd);
+    const hasEnd = /<!--\s*devkit-managed:end\s*-->/.test(claudeMd);
+
+    if (hasStart && hasEnd) {
+      const blockMatch = claudeMd.match(/<!--\s*devkit-managed:start[\s\S]*?<!--\s*devkit-managed:end\s*-->/);
+      if (blockMatch) {
+        const block = blockMatch[0];
+        for (const skill of installedSkills) {
+          if (!block.includes(skill)) {
+            mediumDrift.push(`CLAUDE.md managed block missing ${skill} section`);
+          }
+        }
+      }
+    } else if (hasStart && !hasEnd) {
+      highDrift.push('CLAUDE.md managed block unclosed (missing end marker)');
+    } else if (!hasStart && installedSkills.length > 0) {
+      mediumDrift.push('CLAUDE.md missing managed block but installed_skills non-empty');
+    }
+  }
+
+  // Fingerprint drift is medium severity
+  for (const item of driftItems) {
+    mediumDrift.push(item);
+  }
+
+  lines.push('## Drift');
+  if (highDrift.length === 0 && mediumDrift.length === 0 && lowDrift.length === 0) {
+    lines.push('- No drift detected');
+  } else {
+    if (highDrift.length > 0) {
+      lines.push('### 高(必须修复)');
+      for (const item of highDrift) {
+        lines.push(`- ${item}`);
+      }
+    }
+    if (mediumDrift.length > 0) {
+      lines.push('### 中(建议修复)');
+      for (const item of mediumDrift) {
+        lines.push(`- ${item}`);
+      }
+    }
+    if (lowDrift.length > 0) {
+      lines.push('### 低(可选)');
+      for (const item of lowDrift) {
+        lines.push(`- ${item}`);
+      }
+    }
+  }
+  lines.push('');
+
+  lines.push('## Recommendations');
+  const recs = [];
+  if (highDrift.length > 0) {
+    recs.push('1. fix high-severity drift (reinstall skill / restore trigger)');
+  }
+  if (mediumDrift.length > 0) {
+    recs.push(`${recs.length + 1}. sync medium-severity drift (update managed block / rescan)`);
+  }
+  if (driftItems.length > 0) {
+    recs.push(`${recs.length + 1}. rescan to update project.yaml (sync)`);
+  }
+  if (recs.length === 0) {
+    recs.push('1. no action needed');
+  }
+  for (const rec of recs) {
+    lines.push(rec);
+  }
+
+  console.log(lines.join('\n'));
+}
+
+function timeAgo(isoString) {
+  const then = Date.parse(isoString);
+  if (Number.isNaN(then)) return 'unknown';
+  const diffSec = Math.floor((Date.now() - then) / 1000);
+  if (diffSec < 60) return 'just now';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  return `${Math.floor(diffSec / 86400)}d ago`;
 }
 
 function readExistingProjectFile(filePath) {
@@ -67,7 +247,7 @@ function recordInstalledSkills(skillNames) {
 
   const existing = readExistingProjectFile(PROJECT_FILE);
   const fingerprint = collectFingerprint(process.cwd());
-  const analysis = analyzeProject(process.cwd(), fingerprint, existing);
+  const analysis = analyzeProject(process.cwd(), fingerprint, existing, 'bootstrap');
   const installedSkills = new Set(analysis.ai_configs.installed_skills);
   skillNames.forEach((skillName) => installedSkills.add(skillName));
   analysis.ai_configs.installed_skills = Array.from(installedSkills).sort();
@@ -104,7 +284,7 @@ function getInvalidReason(existing, currentFingerprint) {
   return '';
 }
 
-function analyzeProject(rootDir, fingerprint, existing) {
+function analyzeProject(rootDir, fingerprint, existing, tier) {
   const packageJson = readJson(path.join(rootDir, 'package.json'));
   const goMod = readText(path.join(rootDir, 'go.mod'));
   const pyproject = readText(path.join(rootDir, 'pyproject.toml'));
@@ -119,6 +299,9 @@ function analyzeProject(rootDir, fingerprint, existing) {
   const installedSkills = existing && existing.ai_configs && Array.isArray(existing.ai_configs.installed_skills)
     ? existing.ai_configs.installed_skills
     : [];
+
+  const isAdopt = tier === 'adopt';
+  const managedBy = isAdopt ? 'user' : 'devkit';
 
   return {
     schema_version: 1,
@@ -139,6 +322,7 @@ function analyzeProject(rootDir, fingerprint, existing) {
       has_claude_md: fs.existsSync(path.join(rootDir, 'CLAUDE.md')),
       has_cursor_rules: fs.existsSync(path.join(rootDir, '.cursorrules')),
       installed_skills: installedSkills,
+      managed_by: managedBy,
     },
     context_budget: {
       xs: 3000,
@@ -474,6 +658,7 @@ function toProjectYaml(data) {
     `  has_claude_md: ${data.ai_configs.has_claude_md}`,
     `  has_cursor_rules: ${data.ai_configs.has_cursor_rules}`,
     `  installed_skills: ${yamlInlineArray(data.ai_configs.installed_skills)}`,
+    `  managed_by: ${yamlScalar(data.ai_configs.managed_by || 'devkit')}`,
     'context_budget:',
     `  xs: ${data.context_budget.xs}`,
     `  s: ${data.context_budget.s}`,
