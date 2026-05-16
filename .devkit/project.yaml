@@ -1,8 +1,8 @@
 schema_version: 1
-scanned_at: 2026-05-13T03:59:22.355Z
+scanned_at: 2026-05-16T08:34:39.684Z
 ttl_seconds: 604800
 fingerprint:
-  package_json_hash: sha256:57a741750965f2a00fdfff3ce31183df1d88b44f690630e2e56ad70ad171e370
+  package_json_hash: sha256:cfe3dea0c4457459c68e87bcb6b7a54acdf6ca2f780430a6aa2f599b0de65d0e
   lockfile_hash: ""
   go_mod_hash: ""
   pyproject_hash: ""
@@ -12,7 +12,7 @@ project:
   language: [javascript]
   framework: []
   scale: S
-  loc: 1148
+  loc: 2434
   module_count: 3
   is_monorepo: false
 byted_signals:
@@ -21,8 +21,10 @@ byted_signals:
   is_internal: false
 ai_configs:
   has_claude_md: true
+  has_agents_md: true
   has_cursor_rules: false
   installed_skills: [devkit-go, devkit-init]
+  managed_by: devkit
 context_budget:
   xs: 3000
   s: 5000

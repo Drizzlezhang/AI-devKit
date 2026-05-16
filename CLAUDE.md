@@ -36,3 +36,23 @@ AI-devKit 是一个可通过 `npx` 或 `npm` 安装的 skill 工程，面向 Cla
 3. 检查安装脚本与 skill 入口/子文档的内容一致性
 4. 提交代码并打 tag（如需要）
 5. 发布到 npm 或通过 `npx` 进行安装验证
+
+<!-- devkit-managed:start version=1 generated_at=2026-05-16T08:33:57.385Z -->
+## DevKit Configuration
+
+This section is managed by `devkit-init`. Do not edit manually.
+
+### Installed Skills
+- devkit-init: project bootstrap, audit, adopt
+- devkit-go: 7-stage development workflow
+
+### Project Meta
+- language: [javascript]
+- scale: S
+- internal: false
+
+### Workflow Conventions
+- 触发 devkit-go 进入 7 阶段流程
+- _meta.yaml schema_version: 2
+- STATE.md 字段顺序锁定(详见 templates/STATE.md)
+<!-- devkit-managed:end -->
