@@ -1,6 +1,6 @@
 {
   "name": "@Drizzlezhang/ai-devkit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Intelligent Claude Code skill installer and spec-driven workflow toolkit with Trae CLI and Codex CLI runtime detection",
   "bin": {
     "ai-devkit": "bin/install.js",
