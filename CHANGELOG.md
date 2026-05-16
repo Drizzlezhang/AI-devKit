@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bin/detect.js` audit 模式增加 skill 健康度检测与漂移分级（高/中/低），并检查 `CLAUDE.md` 标记块一致性。
 - `skills/devkit-init/docs/runtime-decision.md` 增加"漂移分级与修复策略"段。
 - `skills/devkit-init/docs/redundancy-policy.md` 增补接入档位例外：用户已装 skill 视为白名单。
+- `bin/install.js` 支持 Trae 项目级安装：`--runtime trae` 时 skill 安装到 `.trae/skills/`，managed block 写入 `AGENTS.md`。
 
 ## [0.1.2] - 2026-05-13
 

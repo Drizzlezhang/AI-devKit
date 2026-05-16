@@ -15,19 +15,25 @@ const RUNTIMES = {
     label: 'Claude Code',
     configDir: path.join(os.homedir(), '.claude'),
     globalSkillsDir: path.join(os.homedir(), '.claude', 'skills'),
-    supportsSkillInstall: true,
+    projectSkillsDir: '.claude/skills',
+    projectRulesFile: 'CLAUDE.md',
+    supportsGlobalInstall: true,
   },
   trae: {
     label: 'Trae CLI',
     configDir: path.join(os.homedir(), '.trae'),
     globalSkillsDir: null,
-    supportsSkillInstall: false,
+    projectSkillsDir: '.trae/skills',
+    projectRulesFile: 'AGENTS.md',
+    supportsGlobalInstall: false,
   },
   codex: {
     label: 'Codex CLI',
     configDir: path.join(os.homedir(), '.codex'),
     globalSkillsDir: null,
-    supportsSkillInstall: false,
+    projectSkillsDir: '.claude/skills',
+    projectRulesFile: 'CLAUDE.md',
+    supportsGlobalInstall: false,
   },
 };
 
@@ -43,7 +49,7 @@ Usage:
 Options:
   --help              Show this help message
   --global            Install into the verified global skills directory for the selected runtime
-  --project           Install into the current project's .claude/skills directory
+  --project           Install into the current project's runtime-specific skills directory
   --runtime <name>    Force runtime: claude | trae | codex
 
 Verified usage paths:
@@ -59,9 +65,9 @@ What this installer does:
   - Copies templates/ into the installed devkit-go skill directory
 
 Runtime notes:
-  - Claude Code uses ~/.claude/skills for global skill installation
-  - Codex CLI is detected via ~/.codex/config.toml and project .codex/config.toml, but Claude-style global skill installation is not defined here
-  - Trae CLI is detected via ~/.trae, but its official global skill directory is not asserted by this installer
+  - Claude Code uses ~/.claude/skills for global, .claude/skills for project
+  - Trae uses .trae/skills for project installation; global skills managed via IDE UI
+  - Codex CLI is detected via ~/.codex/config.toml but skill installation is not yet supported
 `);
 }
 
@@ -180,7 +186,7 @@ async function chooseScope(explicitScope) {
     while (true) {
       const answer = (await askQuestion(
         rl,
-        'Select install scope: [1] Global (Claude only) [2] Project (./.claude/skills) > '
+        'Select install scope: [1] Global [2] Project (runtime-specific dir) > '
       )).toLowerCase();
 
       if (answer === '1' || answer === 'global' || answer === 'g') {
@@ -253,23 +259,28 @@ function recordInstalledSkills(projectRoot, skillNames) {
 const MANAGED_START_RE = /<!--\s*devkit-managed:start\s+version=\d+\s+generated_at=[^\s>]+\s*-->/;
 const MANAGED_END_RE = /<!--\s*devkit-managed:end\s*-->/;
 
-function writeManagedBlockForProject(projectRoot, skillNames) {
-  const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
+function writeManagedBlockForProject(projectRoot, skillNames, rulesFile) {
+  const rulesPath = path.join(projectRoot, rulesFile);
   const blockContent = renderManagedBlock(skillNames);
 
-  if (!fs.existsSync(claudeMdPath)) {
-    const templatePath = path.join(ROOT, 'templates', 'CLAUDE.md');
-    if (fs.existsSync(templatePath)) {
-      const template = fs.readFileSync(templatePath, 'utf8');
-      const filled = template
-        .replace('<ISO8601>', new Date().toISOString())
-        .replace('<!-- 此处由 install.js 按 project.yaml.ai_configs.installed_skills 动态填充 -->\n- devkit-init: project bootstrap, audit, adopt\n- devkit-go: 7-stage development workflow', blockContent.trim());
-      fs.writeFileSync(claudeMdPath, filled, 'utf8');
+  if (!fs.existsSync(rulesPath)) {
+    if (rulesFile === 'CLAUDE.md') {
+      const templatePath = path.join(ROOT, 'templates', 'CLAUDE.md');
+      if (fs.existsSync(templatePath)) {
+        const template = fs.readFileSync(templatePath, 'utf8');
+        const filled = template
+          .replace('<ISO8601>', new Date().toISOString())
+          .replace('<!-- 此处由 install.js 按 project.yaml.ai_configs.installed_skills 动态填充 -->\n- devkit-init: project bootstrap, audit, adopt\n- devkit-go: 7-stage development workflow', blockContent.trim());
+        fs.writeFileSync(rulesPath, filled, 'utf8');
+      }
+    } else {
+      const content = `# ${rulesFile}\n\n<!-- devkit-managed:start version=1 generated_at=${new Date().toISOString()} -->\n${blockContent}<!-- devkit-managed:end -->\n`;
+      fs.writeFileSync(rulesPath, content, 'utf8');
     }
     return;
   }
 
-  const existing = fs.readFileSync(claudeMdPath, 'utf8');
+  const existing = fs.readFileSync(rulesPath, 'utf8');
   const startMatch = existing.match(MANAGED_START_RE);
   const endMatch = existing.match(MANAGED_END_RE);
 
@@ -285,7 +296,7 @@ function writeManagedBlockForProject(projectRoot, skillNames) {
     const before = existing.slice(0, startIdx);
     const after = existing.slice(endIdx + endMatch[0].length);
     const newBlock = `<!-- devkit-managed:start version=1 generated_at=${new Date().toISOString()} -->\n${blockContent}<!-- devkit-managed:end -->`;
-    fs.writeFileSync(claudeMdPath, `${before}${newBlock}${after}`, 'utf8');
+    fs.writeFileSync(rulesPath, `${before}${newBlock}${after}`, 'utf8');
     return;
   }
 
@@ -300,7 +311,7 @@ function writeManagedBlockForProject(projectRoot, skillNames) {
   }
 
   const appended = `${existing.trimEnd()}\n\n<!-- devkit-managed:start version=1 generated_at=${new Date().toISOString()} -->\n${blockContent}<!-- devkit-managed:end -->\n`;
-  fs.writeFileSync(claudeMdPath, appended, 'utf8');
+  fs.writeFileSync(rulesPath, appended, 'utf8');
 }
 
 function renderManagedBlock(skillNames) {
@@ -380,11 +391,11 @@ async function main() {
 
   const targetSkillsDir = scope === 'global'
     ? runtimeSelection.runtime.globalSkillsDir
-    : path.join(process.cwd(), '.claude', 'skills');
+    : path.join(process.cwd(), runtimeSelection.runtime.projectSkillsDir);
 
-  if (scope === 'global' && !runtimeSelection.runtime.supportsSkillInstall) {
+  if (scope === 'global' && !runtimeSelection.runtime.supportsGlobalInstall) {
     throw new Error(
-      `${runtimeSelection.runtime.label} does not have a verified Claude-style global skills directory. Use --project, or extend the installer with a runtime-specific integration.`
+      `${runtimeSelection.runtime.label} does not support global skill installation. Use --project instead.`
     );
   }
 
@@ -397,7 +408,7 @@ async function main() {
 
   if (scope === 'project') {
     recordInstalledSkills(process.cwd(), installedSkillNames);
-    writeManagedBlockForProject(process.cwd(), installedSkillNames);
+    writeManagedBlockForProject(process.cwd(), installedSkillNames, runtimeSelection.runtime.projectRulesFile);
   }
 
   console.log('ai-devkit installation complete.');

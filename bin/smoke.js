@@ -478,10 +478,52 @@ function assertManagedBlock(projectRoot) {
     throw new Error('install should fail on unclosed managed block');
   }
 
+  // Scenario 5: Trae runtime installs to .trae/skills and writes AGENTS.md
+  const traeRoot = path.join(path.dirname(projectRoot), 'trae-fixture');
+  fs.mkdirSync(traeRoot, { recursive: true });
+  fs.writeFileSync(path.join(traeRoot, 'package.json'), JSON.stringify({ name: 'trae-test', version: '0.0.1', private: true }, null, 2) + '\n', 'utf8');
+
+  childProcess.execFileSync(process.execPath, [installPath, '--project', '--runtime', 'trae'], {
+    cwd: traeRoot,
+    stdio: 'pipe',
+    env: { ...process.env },
+  });
+
+  const traeSkillMd = path.join(traeRoot, '.trae', 'skills', 'devkit-init', 'SKILL.md');
+  if (!fs.existsSync(traeSkillMd)) {
+    throw new Error('Trae install should place SKILL.md in .trae/skills/devkit-init/');
+  }
+
+  const agentsMdPath = path.join(traeRoot, 'AGENTS.md');
+  const agentsMd = readRequiredFile(agentsMdPath);
+  assertIncludes(agentsMd, '<!-- devkit-managed:start', 'Trae install should create managed block in AGENTS.md');
+  assertIncludes(agentsMd, '### Installed Skills', 'AGENTS.md should contain installed skills section');
+
+  if (fs.existsSync(path.join(traeRoot, 'CLAUDE.md'))) {
+    throw new Error('Trae install should NOT create CLAUDE.md');
+  }
+
+  // Scenario 6: Trae runtime rejects global install
+  let traeGlobalFailed = false;
+  try {
+    childProcess.execFileSync(process.execPath, [installPath, '--global', '--runtime', 'trae'], {
+      cwd: traeRoot,
+      stdio: 'pipe',
+      env: { ...process.env },
+    });
+  } catch (error) {
+    traeGlobalFailed = /does not support global skill installation/.test(String(error.stderr || error.message));
+  }
+
+  if (!traeGlobalFailed) {
+    throw new Error('Trae global install should fail with unsupported global installation error');
+  }
+
   // Cleanup
   fs.rmSync(freshRoot, { recursive: true, force: true });
   fs.rmSync(adoptRoot, { recursive: true, force: true });
   fs.rmSync(brokenRoot, { recursive: true, force: true });
+  fs.rmSync(traeRoot, { recursive: true, force: true });
 }
 
 function assertAuditDrift(projectRoot) {
