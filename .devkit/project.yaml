@@ -1,8 +1,8 @@
 schema_version: 1
-scanned_at: 2026-05-16T08:34:39.684Z
+scanned_at: 2026-05-18T07:54:25.637Z
 ttl_seconds: 604800
 fingerprint:
-  package_json_hash: sha256:cfe3dea0c4457459c68e87bcb6b7a54acdf6ca2f780430a6aa2f599b0de65d0e
+  package_json_hash: sha256:966eca5c9407d7eb204ce77baf43e3fe9ed57fba4527b27ab70e765509c84910
   lockfile_hash: ""
   go_mod_hash: ""
   pyproject_hash: ""
@@ -12,9 +12,10 @@ project:
   language: [javascript]
   framework: []
   scale: S
-  loc: 2434
+  loc: 2439
   module_count: 3
   is_monorepo: false
+  has_readme: true
 byted_signals:
   strong: []
   weak: []

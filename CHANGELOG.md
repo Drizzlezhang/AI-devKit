@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.2.1] - 2026-05-18
+
+### Added
+- `templates/README.md` 模板文件，支持按 project.scale 分段渲染。
+- `skills/devkit-init/docs/readme-strategy.md`，定义 README 生成/评估/巡检策略。
+- `skills/devkit-go/docs/readme-update-check.md`，定义 SHIP 阶段 README 更新检查流程。
+- `bin/detect.js` 新增 `has_readme` 字段输出。
+
+### Changed
+- `skills/devkit-init/SKILL.md` 入口增加 README 生命周期管理职责。
+- `skills/devkit-go/docs/stage-6-ship.md` 退出检查清单增加 README 同步检查。
+
 ## [0.2.0] - 2026-05-14
 
 ### Added

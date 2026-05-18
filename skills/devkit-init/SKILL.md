@@ -28,6 +28,7 @@ trigger: manual
 - 在空项目和长流程协作场景下，将 `caveman` 作为默认标准安装候选。
 - 对复杂项目将 `grill-me` 作为需求澄清增强候选。
 - 安装后执行验证，并在失败时给出重试与回滚建议。
+- 检测 README.md 状态，首装时生成骨架，接入时给出质量优化建议。
 - 禁用冗余能力，并输出清晰总结。
 
 # 执行原则
@@ -80,6 +81,14 @@ trigger: manual
 6. 每个安装动作完成后都必须立即执行对应验证，并在失败时输出错误、重试建议与回滚建议。
 7. 依据 `docs/redundancy-policy.md` 检测和禁用冗余能力。
 8. 参考 `docs/seed-recommend.md` 执行种子推荐。
+9. 读取 `docs/readme-strategy.md`，若 README.md 不存在则生成骨架，若已存在则给出优化建议。
+
+## README 生命周期
+
+在首装/接入/巡检分支的安装后验证完成后，你必须额外处理 README：
+1. 读取 `docs/readme-strategy.md`
+2. 按当前档位执行对应的 README 策略（生成/评估/检查）
+3. README 操作永远在 skill 安装之后、最终总结之前执行
 
 ## 接入
 1. 先读取 `docs/adopt-flow.md`，确认已有手写配置、已有 skills 与 `.specs/` 的接入边界。

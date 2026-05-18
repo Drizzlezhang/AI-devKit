@@ -29,6 +29,7 @@ function main() {
     assertManagedBlock(projectRoot);
     assertAuditDrift(projectRoot);
     assertSeedRecommend(projectRoot);
+    assertReadmeDetect(projectRoot);
     console.log('PASS');
   } catch (error) {
     console.error(`FAIL: ${error.message}`);
@@ -593,6 +594,37 @@ function assertAuditDrift(projectRoot) {
 
   // Cleanup
   fs.rmSync(auditRoot, { recursive: true, force: true });
+}
+
+function assertReadmeDetect(projectRoot) {
+  const detectPath = path.join(ROOT, 'bin', 'detect.js');
+  const env = { ...process.env };
+
+  const readmeFixtureRoot = path.join(path.dirname(projectRoot), 'readme-fixture');
+  fs.mkdirSync(readmeFixtureRoot, { recursive: true });
+  fs.writeFileSync(path.join(readmeFixtureRoot, 'package.json'), JSON.stringify({ name: 'readme-test', version: '0.0.1', private: true }, null, 2) + '\n', 'utf8');
+
+  // Without README
+  const noReadmeOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: readmeFixtureRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(noReadmeOut, 'has_readme: false', 'detect should report has_readme: false when no README exists');
+
+  // With README
+  fs.writeFileSync(path.join(readmeFixtureRoot, 'README.md'), '# Test\n', 'utf8');
+  const withReadmeOut = childProcess.execFileSync(process.execPath, [detectPath, '--refresh'], {
+    cwd: readmeFixtureRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'bootstrap' },
+  });
+  assertIncludes(withReadmeOut, 'has_readme: true', 'detect should report has_readme: true when README.md exists');
+
+  // Cleanup
+  fs.rmSync(readmeFixtureRoot, { recursive: true, force: true });
 }
 
 function assertSeedRecommend(projectRoot) {

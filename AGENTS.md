@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- devkit-managed:start version=1 generated_at=2026-05-16T08:34:39.692Z -->
+<!-- devkit-managed:start version=1 generated_at=2026-05-18T07:32:47.675Z -->
 ## DevKit Configuration
 
 This section is managed by `devkit-init`. Do not edit manually.

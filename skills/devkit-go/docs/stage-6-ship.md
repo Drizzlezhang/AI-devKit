@@ -7,6 +7,7 @@
 ## 必做事项
 - 生成符合 conventional commits 的 commit message
 - 根据 Size 判断是否需要先经过 `pre-commit` gate
+- 检查本次变更是否需要同步更新 README.md（参考 `docs/readme-update-check.md`）
 - 执行 `git commit`
 - 提示用户是否继续 push 或创建 PR
 - 将 `_meta.yaml` 标记为 `completed`
@@ -18,6 +19,7 @@
 - [ ] `_meta.yaml.last_next` 已更新
 - [ ] `_meta.yaml.schema_version == 2`
 - [ ] `STATE.md.Recent Changes` 已 append 本阶段摘要
+- [ ] 已检查 README.md 是否需要同步更新
 
 ## 产物要求
 - git commit hash

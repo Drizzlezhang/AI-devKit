@@ -63,6 +63,7 @@ function main() {
   console.log(`languages: ${analysis.project.language.join(', ') || 'unknown'}`);
   console.log(`frameworks: ${analysis.project.framework.join(', ') || 'none'}`);
   console.log(`internal: ${analysis.byted_signals.is_internal ? 'yes' : 'no'}`);
+  console.log(`has_readme: ${analysis.project.has_readme}`);
 
   const seeds = recommendSeeds(process.cwd(), analysis);
   console.log('find_skill_hint: true');
@@ -493,6 +494,9 @@ function analyzeProject(rootDir, fingerprint, existing, tier) {
       loc,
       module_count: moduleCount,
       is_monorepo: detectMonorepo({ packageJson, rootDir }),
+      has_readme: fs.existsSync(path.join(rootDir, 'README.md'))
+        || fs.existsSync(path.join(rootDir, 'readme.md'))
+        || fs.existsSync(path.join(rootDir, 'Readme.md')),
     },
     byted_signals: bytedSignals,
     ai_configs: {
@@ -827,6 +831,7 @@ function toProjectYaml(data) {
     `  loc: ${data.project.loc}`,
     `  module_count: ${data.project.module_count}`,
     `  is_monorepo: ${data.project.is_monorepo}`,
+    `  has_readme: ${data.project.has_readme}`,
     'byted_signals:',
     `  strong: ${yamlInlineArray(data.byted_signals.strong)}`,
     `  weak: ${yamlInlineArray(data.byted_signals.weak)}`,
