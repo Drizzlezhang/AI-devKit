@@ -1,6 +1,11 @@
 # AI-DevKit
 
-AI-DevKit 是一个面向 Claude Code 的 skill 工具包，用一个安装器交付两类核心能力：
+[![npm version](https://img.shields.io/github/package-json/v/Drizzlezhang/AI-devKit?label=npm)](https://github.com/Drizzlezhang/AI-devKit/pkgs/npm/ai-devkit)
+[![License](https://img.shields.io/github/license/Drizzlezhang/AI-devKit)](LICENSE)
+
+> 面向 Claude Code 的 skill 工具包 — 用一个安装器交付项目初始化与七阶段需求闭环开发。
+
+AI-DevKit 用一个安装器交付两类核心能力：
 - `devkit-init`：为项目建立更干净、更适配的 AI 协作环境
 - `devkit-go`：把一句话需求推进成带产物、带验证、可交付的七阶段闭环
 
@@ -27,7 +32,8 @@ AI-DevKit 是一个面向 Claude Code 的 skill 工具包，用一个安装器�
 - 发布 registry：`https://npm.pkg.github.com`
 - 源码仓库：`https://github.com/Drizzlezhang/AI-devKit`
 
-## 为什么用它
+## Features
+
 - **少手工配置**：初始化项目协作环境，而不是每次从零补规则
 - **少上下文浪费**：skill 采用入口 + 子文档结构，避免超大单文件 prompt
 - **过程可追踪**：`devkit-go` 通过 `.specs/` 管理 proposal、requirements、design、tasks、verification
@@ -149,6 +155,7 @@ node bin/detect.js --refresh
 - `docs/baseline-bootstrap.md`：空项目 / 一句话需求场景下的基础保障模式
 - `docs/redundancy-policy.md`：冗余检测与禁用原则
 - `docs/bytedcli-policy.md`：字节内部项目强弱信号判定与 bytedcli 安装策略
+- `docs/readme-strategy.md`：README 首装生成、接入优化与巡检规则
 
 ### `devkit-go`
 - `SKILL.md`：入口、阶段路由、总执行约束
@@ -156,6 +163,7 @@ node bin/detect.js --refresh
 - `docs/size-routing.md`：Size 推断、阶段序列与切换要求
 - `docs/state-management.md`：`STATE.md`、`_meta.yaml` 与恢复模式
 - `docs/gates.md`：审核关口与失败处理
+- `docs/readme-update-check.md`：SHIP 阶段 README 更新触发检查
 - `docs/stage-*.md`：各阶段的输入、动作、产物与规则
 
 ## 使用后的能力
@@ -272,6 +280,7 @@ AI-devKit/
 - `design.md`
 - `tasks.md`
 - `verification.md`
+- `STATE.md`
 - `_meta.yaml`
 
 这些产物会存放在：
