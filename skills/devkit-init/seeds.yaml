@@ -278,3 +278,28 @@ seeds:
       args: ["-y", "@anthropic-ai/mcp-registry"]
       scope: user
     requires_auth: false
+
+  # ── 代码图谱分析 ──
+  - name: codegraph
+    description: "代码关系图与依赖可视化，适合中大型仓库快速建立结构认知"
+    source: "github.com/colbymchenry/codegraph"
+    install: "npx @colbymchenry/codegraph"
+    stars: 29058
+    priority: 28
+    when:
+      scale_gte: "M"
+
+  # ── 输出质量与风格约束 ──
+  - name: taste-skill
+    description: "提升 Claude 输出质量与风格一致性的工程化 skill 集"
+    source: "github.com/Leonxlnx/taste-skill"
+    install: "npx skills add Leonxlnx/taste-skill"
+    stars: 23108
+    priority: 29
+
+  - name: stop-slop
+    description: "减少 AI 代码与文档噪声（slop）的约束型 skill"
+    source: "github.com/hardikpandya/stop-slop"
+    install: "npx skills add hardikpandya/stop-slop"
+    stars: 5301
+    priority: 30

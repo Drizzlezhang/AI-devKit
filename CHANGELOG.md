@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-18
+
+### Changed
+- 版本升级到 `0.2.2`，补充发行记录与校验对齐。
+
 ## [0.2.1] - 2026-05-18
 
 ### Added
