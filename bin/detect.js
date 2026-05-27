@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 
@@ -14,6 +15,18 @@ const CODE_EXTENSIONS = new Set([
 ]);
 
 const VALID_TIERS = new Set(['bootstrap', 'adopt', 'audit', 'silent']);
+
+function resolveRuntimeLayout(rootDir) {
+  if (fs.existsSync(path.join(rootDir, '.trae', 'skills'))) {
+    return { runtime: 'trae', skillsDir: '.trae/skills', rulesFile: 'AGENTS.md' };
+  }
+
+  if (fs.existsSync(path.join(rootDir, '.codex', 'skills')) || fs.existsSync(path.join(rootDir, '.codex', 'config.toml'))) {
+    return { runtime: 'codex', skillsDir: '.codex/skills', rulesFile: 'AGENTS.md' };
+  }
+
+  return { runtime: 'claude', skillsDir: '.claude/skills', rulesFile: 'CLAUDE.md' };
+}
 
 function main() {
   const command = process.argv[2];
@@ -268,6 +281,7 @@ function runAudit(existing, currentFingerprint) {
 
   const name = existing.project.name || path.basename(process.cwd());
   const rootDir = process.cwd();
+  const runtimeLayout = resolveRuntimeLayout(rootDir);
   const lines = [];
 
   lines.push(`DevKit Audit Report — ${new Date().toISOString()}`);
@@ -290,6 +304,7 @@ function runAudit(existing, currentFingerprint) {
   lines.push(`- language: ${(existing.project.language || []).join(', ') || 'unknown'} ${driftItems.length > 0 ? '⚠️ fingerprint drift' : '[unchanged]'}`);
   lines.push(`- scale: ${existing.project.scale || 'XS'}`);
   lines.push(`- internal: ${existing.byted_signals && existing.byted_signals.is_internal ? 'yes' : 'no'}`);
+  lines.push(`- runtime_layout: ${runtimeLayout.runtime}`);
   lines.push('');
 
   // Skill health checks
@@ -301,7 +316,7 @@ function runAudit(existing, currentFingerprint) {
 
   lines.push(`## Installed Skills (${installedSkills.length})`);
   for (const skill of installedSkills) {
-    const skillDir = path.join(rootDir, '.claude', 'skills', skill);
+    const skillDir = path.join(rootDir, runtimeLayout.skillsDir, skill);
     const skillMdPath = path.join(skillDir, 'SKILL.md');
     let status = '[up-to-date]';
 
@@ -324,28 +339,33 @@ function runAudit(existing, currentFingerprint) {
   }
   lines.push('');
 
-  // CLAUDE.md managed block consistency
-  const claudeMdPath = path.join(rootDir, 'CLAUDE.md');
-  if (fs.existsSync(claudeMdPath)) {
-    const claudeMd = fs.readFileSync(claudeMdPath, 'utf8');
-    const hasStart = /<!--\s*devkit-managed:start/.test(claudeMd);
-    const hasEnd = /<!--\s*devkit-managed:end\s*-->/.test(claudeMd);
+  // Runtime rules file managed block consistency
+  const rulesFile = runtimeLayout.rulesFile;
+  const rulesPath = path.join(rootDir, rulesFile);
+  if (fs.existsSync(rulesPath)) {
+    const rulesContent = fs.readFileSync(rulesPath, 'utf8');
+    const hasStart = /<!--\s*devkit-managed:start/.test(rulesContent);
+    const hasEnd = /<!--\s*devkit-managed:end\s*-->/.test(rulesContent);
 
     if (hasStart && hasEnd) {
-      const blockMatch = claudeMd.match(/<!--\s*devkit-managed:start[\s\S]*?<!--\s*devkit-managed:end\s*-->/);
+      const blockMatch = rulesContent.match(/<!--\s*devkit-managed:start[\s\S]*?<!--\s*devkit-managed:end\s*-->/);
       if (blockMatch) {
         const block = blockMatch[0];
         for (const skill of installedSkills) {
           if (!block.includes(skill)) {
-            mediumDrift.push(`CLAUDE.md managed block missing ${skill} section`);
+            mediumDrift.push(`${rulesFile} managed block missing ${skill} section`);
           }
         }
       }
     } else if (hasStart && !hasEnd) {
-      highDrift.push('CLAUDE.md managed block unclosed (missing end marker)');
+      highDrift.push(`${rulesFile} managed block unclosed (missing end marker)`);
     } else if (!hasStart && installedSkills.length > 0) {
-      mediumDrift.push('CLAUDE.md missing managed block but installed_skills non-empty');
+      mediumDrift.push(`${rulesFile} missing managed block but installed_skills non-empty`);
     }
+  }
+
+  if (runtimeLayout.runtime === 'codex' && fs.existsSync(path.join(rootDir, '.claude', 'skills')) && !fs.existsSync(path.join(rootDir, '.codex', 'skills'))) {
+    mediumDrift.push('codex legacy layout detected (.claude/skills). migrate to .codex/skills');
   }
 
   // Fingerprint drift is medium severity
@@ -480,6 +500,7 @@ function analyzeProject(rootDir, fingerprint, existing, tier) {
 
   const isAdopt = tier === 'adopt';
   const managedBy = isAdopt ? 'user' : 'devkit';
+  const runtimeLayout = resolveRuntimeLayout(rootDir);
 
   return {
     schema_version: 1,
@@ -501,7 +522,10 @@ function analyzeProject(rootDir, fingerprint, existing, tier) {
     byted_signals: bytedSignals,
     ai_configs: {
       has_claude_md: fs.existsSync(path.join(rootDir, 'CLAUDE.md')),
+      has_agents_md: fs.existsSync(path.join(rootDir, 'AGENTS.md')),
+      has_codex_config: fs.existsSync(path.join(rootDir, '.codex', 'config.toml')) || fs.existsSync(path.join(os.homedir(), '.codex', 'config.toml')),
       has_cursor_rules: fs.existsSync(path.join(rootDir, '.cursorrules')),
+      runtime_layout: runtimeLayout.runtime,
       installed_skills: installedSkills,
       managed_by: managedBy,
     },
@@ -838,7 +862,10 @@ function toProjectYaml(data) {
     `  is_internal: ${data.byted_signals.is_internal}`,
     'ai_configs:',
     `  has_claude_md: ${data.ai_configs.has_claude_md}`,
+    `  has_agents_md: ${data.ai_configs.has_agents_md || false}`,
+    `  has_codex_config: ${data.ai_configs.has_codex_config || false}`,
     `  has_cursor_rules: ${data.ai_configs.has_cursor_rules}`,
+    `  runtime_layout: ${yamlScalar(data.ai_configs.runtime_layout || 'claude')}`,
     `  installed_skills: ${yamlInlineArray(data.ai_configs.installed_skills)}`,
     `  managed_by: ${yamlScalar(data.ai_configs.managed_by || 'devkit')}`,
     'context_budget:',

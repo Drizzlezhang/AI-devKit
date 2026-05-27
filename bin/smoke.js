@@ -520,11 +520,53 @@ function assertManagedBlock(projectRoot) {
     throw new Error('Trae global install should fail with unsupported global installation error');
   }
 
+  // Scenario 7: Codex runtime installs to .codex/skills and writes AGENTS.md
+  const codexRoot = path.join(path.dirname(projectRoot), 'codex-fixture');
+  fs.mkdirSync(codexRoot, { recursive: true });
+  fs.writeFileSync(path.join(codexRoot, 'package.json'), JSON.stringify({ name: 'codex-test', version: '0.0.1', private: true }, null, 2) + '\n', 'utf8');
+
+  childProcess.execFileSync(process.execPath, [installPath, '--project', '--runtime', 'codex'], {
+    cwd: codexRoot,
+    stdio: 'pipe',
+    env: { ...process.env },
+  });
+
+  const codexSkillMd = path.join(codexRoot, '.codex', 'skills', 'devkit-init', 'SKILL.md');
+  if (!fs.existsSync(codexSkillMd)) {
+    throw new Error('Codex install should place SKILL.md in .codex/skills/devkit-init/');
+  }
+
+  const codexAgentsMdPath = path.join(codexRoot, 'AGENTS.md');
+  const codexAgentsMd = readRequiredFile(codexAgentsMdPath);
+  assertIncludes(codexAgentsMd, '<!-- devkit-managed:start', 'Codex install should create managed block in AGENTS.md');
+  assertIncludes(codexAgentsMd, '### Installed Skills', 'Codex AGENTS.md should contain installed skills section');
+
+  if (fs.existsSync(path.join(codexRoot, 'CLAUDE.md'))) {
+    throw new Error('Codex install should NOT create CLAUDE.md');
+  }
+
+  // Scenario 8: Codex runtime rejects global install
+  let codexGlobalFailed = false;
+  try {
+    childProcess.execFileSync(process.execPath, [installPath, '--global', '--runtime', 'codex'], {
+      cwd: codexRoot,
+      stdio: 'pipe',
+      env: { ...process.env },
+    });
+  } catch (error) {
+    codexGlobalFailed = /does not support global skill installation/.test(String(error.stderr || error.message));
+  }
+
+  if (!codexGlobalFailed) {
+    throw new Error('Codex global install should fail with unsupported global installation error');
+  }
+
   // Cleanup
   fs.rmSync(freshRoot, { recursive: true, force: true });
   fs.rmSync(adoptRoot, { recursive: true, force: true });
   fs.rmSync(brokenRoot, { recursive: true, force: true });
   fs.rmSync(traeRoot, { recursive: true, force: true });
+  fs.rmSync(codexRoot, { recursive: true, force: true });
 }
 
 function assertAuditDrift(projectRoot) {
@@ -589,11 +631,36 @@ function assertAuditDrift(projectRoot) {
     encoding: 'utf8',
     env: { ...env, DEVKIT_INIT_TIER: 'audit' },
   });
-  assertIncludes(auditBlock, 'managed block', 'audit should report CLAUDE.md managed block drift');
+  assertIncludes(auditBlock, 'managed block', 'audit should report rules managed block drift');
   assertIncludes(auditBlock, '中(建议修复)', 'audit should have medium-severity section');
+
+  // Test 4: Codex legacy layout should be reported as medium drift
+  const codexAuditRoot = path.join(path.dirname(projectRoot), 'audit-codex-legacy-fixture');
+  fs.mkdirSync(path.join(codexAuditRoot, '.claude', 'skills', 'devkit-init'), { recursive: true });
+  fs.mkdirSync(path.join(codexAuditRoot, '.claude', 'skills', 'devkit-go'), { recursive: true });
+  fs.mkdirSync(path.join(codexAuditRoot, '.codex'), { recursive: true });
+  fs.writeFileSync(path.join(codexAuditRoot, '.codex', 'config.toml'), 'model = "gpt-5"\n', 'utf8');
+  fs.writeFileSync(path.join(codexAuditRoot, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(path.join(codexAuditRoot, '.claude', 'skills', 'devkit-init', 'SKILL.md'), '---\nname: devkit-init\ndescription: test\ntrigger: manual\n---\n', 'utf8');
+  fs.writeFileSync(path.join(codexAuditRoot, '.claude', 'skills', 'devkit-go', 'SKILL.md'), '---\nname: devkit-go\ndescription: test\ntrigger: manual\n---\n', 'utf8');
+
+  childProcess.execFileSync(process.execPath, [detectPath, 'record-install', 'devkit-init', 'devkit-go'], {
+    cwd: codexAuditRoot,
+    stdio: 'pipe',
+    env: { ...env },
+  });
+
+  const codexAuditOut = childProcess.execFileSync(process.execPath, [detectPath], {
+    cwd: codexAuditRoot,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: { ...env, DEVKIT_INIT_TIER: 'audit' },
+  });
+  assertIncludes(codexAuditOut, 'codex legacy layout detected', 'audit should report codex legacy layout drift');
 
   // Cleanup
   fs.rmSync(auditRoot, { recursive: true, force: true });
+  fs.rmSync(codexAuditRoot, { recursive: true, force: true });
 }
 
 function assertReadmeDetect(projectRoot) {

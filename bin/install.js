@@ -31,8 +31,8 @@ const RUNTIMES = {
     label: 'Codex CLI',
     configDir: path.join(os.homedir(), '.codex'),
     globalSkillsDir: null,
-    projectSkillsDir: '.claude/skills',
-    projectRulesFile: 'CLAUDE.md',
+    projectSkillsDir: '.codex/skills',
+    projectRulesFile: 'AGENTS.md',
     supportsGlobalInstall: false,
   },
 };
@@ -67,7 +67,7 @@ What this installer does:
 Runtime notes:
   - Claude Code uses ~/.claude/skills for global, .claude/skills for project
   - Trae uses .trae/skills for project installation; global skills managed via IDE UI
-  - Codex CLI is detected via ~/.codex/config.toml but skill installation is not yet supported
+  - Codex uses .codex/skills for project installation; global skill installation is not supported
 `);
 }
 

@@ -101,7 +101,7 @@ npm install @Drizzlezhang/ai-devkit
 ### 参数
 - `--help` / `-h`：显示帮助
 - `--global`：安装到已验证的全局 skills 目录；当前仅 Claude 支持
-- `--project`：安装到当前项目的 `./.claude/skills`
+- `--project`：安装到当前项目的运行时目录（Claude: `./.claude/skills`，Trae: `./.trae/skills`，Codex: `./.codex/skills`）
 - `--runtime <name>`：强制指定运行时，可选 `claude` / `trae` / `codex`
 
 ### 常用示例
@@ -126,12 +126,12 @@ node bin/detect.js --refresh
 
 ## 运行时支持说明
 - Claude Code：已明确支持全局安装到 `~/.claude/skills/` 与项目级安装到 `./.claude/skills/`，也是当前唯一完成完整安装闭环验证的目标宿主
-- Codex CLI：官方文档确认配置目录为 `~/.codex/config.toml` 与项目级 `.codex/config.toml`；本工程当前只做运行时识别与项目级兼容预留，不声明官方 Claude-style global skills 目录，也不声明完整 MCP 闭环已验证
+- Codex CLI：支持项目级安装到 `./.codex/skills/`，并在 `AGENTS.md` 写入 managed block；全局安装暂不支持
 - Trae CLI：检测用户级目录 `~/.trae/`；本工程当前只做运行时识别与项目级兼容预留，不声明官方 Claude-style global skills 目录，也不声明完整 MCP 闭环已验证
 
 可以把当前支持理解为：
 - **Claude**：识别 + 项目安装 + 全局安装 + 已验证主路径
-- **Codex / Trae**：识别 + 实验性项目级兼容预留
+- **Trae / Codex**：识别 + 项目安装 + managed block 写入（`AGENTS.md`）
 
 ## 安装后你会得到什么
 安装完成后，目标目录下会出现：

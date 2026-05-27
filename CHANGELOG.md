@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `bin/install.js` 将 Codex 项目级安装目标改为 `.codex/skills`，并写入 `AGENTS.md` managed block；`--global --runtime codex` 明确报不支持。
+- `bin/detect.js` 审计改为 runtime 感知路径（Claude/Trae/Codex），并新增 Codex legacy 布局提示。
+- `bin/smoke.js` 新增 Codex 安装与全局拒绝场景，覆盖 `.codex/skills` 与 `AGENTS.md` 行为。
+- `README.md` 运行时支持矩阵同步更新为 Codex 项目级完整支持。
+
 ## [0.2.2] - 2026-05-18
 
 ### Changed
