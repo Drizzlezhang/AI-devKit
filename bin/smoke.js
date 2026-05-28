@@ -427,6 +427,17 @@ function assertManagedBlock(projectRoot) {
   assertIncludes(readRequiredFile(freshClaudeMdPath), '<!-- devkit-managed:end -->', 'fresh install should create managed block end');
   assertIncludes(readRequiredFile(freshClaudeMdPath), '### Installed Skills', 'fresh install managed block should contain skills section');
 
+  const freshAgentsMdPath = path.join(freshRoot, 'AGENTS.md');
+  assertIncludes(readRequiredFile(freshAgentsMdPath), '<!-- devkit-managed:start', 'fresh install should create AGENTS.md managed block');
+  assertIncludes(readRequiredFile(freshAgentsMdPath), '### Installed Skills', 'fresh install AGENTS.md should contain skills section');
+
+  const freshClaudeSkill = path.join(freshRoot, '.claude', 'skills', 'devkit-init', 'SKILL.md');
+  const freshTraeSkill = path.join(freshRoot, '.trae', 'skills', 'devkit-init', 'SKILL.md');
+  const freshCodexSkill = path.join(freshRoot, '.codex', 'skills', 'devkit-init', 'SKILL.md');
+  if (!fs.existsSync(freshClaudeSkill) || !fs.existsSync(freshTraeSkill) || !fs.existsSync(freshCodexSkill)) {
+    throw new Error('--project should install devkit-init to .claude/.trae/.codex skills dirs');
+  }
+
   // Scenario 2: existing CLAUDE.md without block — append block, preserve user content
   const adoptRoot = path.join(path.dirname(projectRoot), 'adopt-fixture');
   fs.mkdirSync(adoptRoot, { recursive: true });
@@ -479,94 +490,47 @@ function assertManagedBlock(projectRoot) {
     throw new Error('install should fail on unclosed managed block');
   }
 
-  // Scenario 5: Trae runtime installs to .trae/skills and writes AGENTS.md
-  const traeRoot = path.join(path.dirname(projectRoot), 'trae-fixture');
-  fs.mkdirSync(traeRoot, { recursive: true });
-  fs.writeFileSync(path.join(traeRoot, 'package.json'), JSON.stringify({ name: 'trae-test', version: '0.0.1', private: true }, null, 2) + '\n', 'utf8');
+  // Scenario 5: --global installs to all host global dirs
+  const globalRoot = path.join(path.dirname(projectRoot), 'global-fixture');
+  const homeDir = path.join(globalRoot, 'home');
+  fs.mkdirSync(globalRoot, { recursive: true });
+  fs.mkdirSync(homeDir, { recursive: true });
+  fs.writeFileSync(path.join(globalRoot, 'package.json'), JSON.stringify({ name: 'global-test', version: '0.0.1', private: true }, null, 2) + '\n', 'utf8');
 
-  childProcess.execFileSync(process.execPath, [installPath, '--project', '--runtime', 'trae'], {
-    cwd: traeRoot,
+  childProcess.execFileSync(process.execPath, [installPath, '--global'], {
+    cwd: globalRoot,
     stdio: 'pipe',
-    env: { ...process.env },
+    env: { ...process.env, HOME: homeDir },
   });
 
-  const traeSkillMd = path.join(traeRoot, '.trae', 'skills', 'devkit-init', 'SKILL.md');
-  if (!fs.existsSync(traeSkillMd)) {
-    throw new Error('Trae install should place SKILL.md in .trae/skills/devkit-init/');
+  const globalClaudeSkill = path.join(homeDir, '.claude', 'skills', 'devkit-init', 'SKILL.md');
+  const globalTraeSkill = path.join(homeDir, '.trae', 'skills', 'devkit-init', 'SKILL.md');
+  const globalCodexSkill = path.join(homeDir, '.codex', 'skills', 'devkit-init', 'SKILL.md');
+  if (!fs.existsSync(globalClaudeSkill) || !fs.existsSync(globalTraeSkill) || !fs.existsSync(globalCodexSkill)) {
+    throw new Error('--global should install devkit-init to ~/.claude ~/.trae ~/.codex skills dirs');
   }
 
-  const agentsMdPath = path.join(traeRoot, 'AGENTS.md');
-  const agentsMd = readRequiredFile(agentsMdPath);
-  assertIncludes(agentsMd, '<!-- devkit-managed:start', 'Trae install should create managed block in AGENTS.md');
-  assertIncludes(agentsMd, '### Installed Skills', 'AGENTS.md should contain installed skills section');
-
-  if (fs.existsSync(path.join(traeRoot, 'CLAUDE.md'))) {
-    throw new Error('Trae install should NOT create CLAUDE.md');
-  }
-
-  // Scenario 6: Trae runtime rejects global install
-  let traeGlobalFailed = false;
+  // Scenario 6: --runtime should be rejected (removed)
+  let runtimeArgFailed = false;
   try {
-    childProcess.execFileSync(process.execPath, [installPath, '--global', '--runtime', 'trae'], {
-      cwd: traeRoot,
+    childProcess.execFileSync(process.execPath, [installPath, '--project', '--runtime', 'codex'], {
+      cwd: globalRoot,
       stdio: 'pipe',
       env: { ...process.env },
     });
   } catch (error) {
-    traeGlobalFailed = /does not support global skill installation/.test(String(error.stderr || error.message));
+    runtimeArgFailed = /Unknown argument: --runtime/.test(String(error.stderr || error.message));
   }
 
-  if (!traeGlobalFailed) {
-    throw new Error('Trae global install should fail with unsupported global installation error');
-  }
-
-  // Scenario 7: Codex runtime installs to .codex/skills and writes AGENTS.md
-  const codexRoot = path.join(path.dirname(projectRoot), 'codex-fixture');
-  fs.mkdirSync(codexRoot, { recursive: true });
-  fs.writeFileSync(path.join(codexRoot, 'package.json'), JSON.stringify({ name: 'codex-test', version: '0.0.1', private: true }, null, 2) + '\n', 'utf8');
-
-  childProcess.execFileSync(process.execPath, [installPath, '--project', '--runtime', 'codex'], {
-    cwd: codexRoot,
-    stdio: 'pipe',
-    env: { ...process.env },
-  });
-
-  const codexSkillMd = path.join(codexRoot, '.codex', 'skills', 'devkit-init', 'SKILL.md');
-  if (!fs.existsSync(codexSkillMd)) {
-    throw new Error('Codex install should place SKILL.md in .codex/skills/devkit-init/');
-  }
-
-  const codexAgentsMdPath = path.join(codexRoot, 'AGENTS.md');
-  const codexAgentsMd = readRequiredFile(codexAgentsMdPath);
-  assertIncludes(codexAgentsMd, '<!-- devkit-managed:start', 'Codex install should create managed block in AGENTS.md');
-  assertIncludes(codexAgentsMd, '### Installed Skills', 'Codex AGENTS.md should contain installed skills section');
-
-  if (fs.existsSync(path.join(codexRoot, 'CLAUDE.md'))) {
-    throw new Error('Codex install should NOT create CLAUDE.md');
-  }
-
-  // Scenario 8: Codex runtime rejects global install
-  let codexGlobalFailed = false;
-  try {
-    childProcess.execFileSync(process.execPath, [installPath, '--global', '--runtime', 'codex'], {
-      cwd: codexRoot,
-      stdio: 'pipe',
-      env: { ...process.env },
-    });
-  } catch (error) {
-    codexGlobalFailed = /does not support global skill installation/.test(String(error.stderr || error.message));
-  }
-
-  if (!codexGlobalFailed) {
-    throw new Error('Codex global install should fail with unsupported global installation error');
+  if (!runtimeArgFailed) {
+    throw new Error('--runtime argument should be rejected as unknown');
   }
 
   // Cleanup
   fs.rmSync(freshRoot, { recursive: true, force: true });
   fs.rmSync(adoptRoot, { recursive: true, force: true });
   fs.rmSync(brokenRoot, { recursive: true, force: true });
-  fs.rmSync(traeRoot, { recursive: true, force: true });
-  fs.rmSync(codexRoot, { recursive: true, force: true });
+  fs.rmSync(globalRoot, { recursive: true, force: true });
 }
 
 function assertAuditDrift(projectRoot) {

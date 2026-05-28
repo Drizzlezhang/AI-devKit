@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- BREAKING: 安装器移除 `--runtime` 参数，仅保留 `--project` / `--global` 两种作用域。
+- `bin/install.js` 改为 host 聚合安装：一次执行同时安装 Claude/Codex/Trae 三宿主（project/global 同步生效），project 模式统一写入 `CLAUDE.md` 与 `AGENTS.md` managed block。
+- `bin/detect.js` 去除 `runtime_layout` 输出，改为 `ai_configs.hosts` 聚合状态，并按 host 维度执行 audit。
+- `bin/smoke.js` 用例升级为 scope × host 矩阵，并新增 `--runtime` 非法参数回归断言。
+- README 运行方式与示例改为 scope 驱动表达，不再出现 runtime 参数。
+
+## [0.3.0] - 2026-05-28
+
+### Changed
 - `bin/install.js` 将 Codex 项目级安装目标改为 `.codex/skills`，并写入 `AGENTS.md` managed block；`--global --runtime codex` 明确报不支持。
 - `bin/detect.js` 审计改为 runtime 感知路径（Claude/Trae/Codex），并新增 Codex legacy 布局提示。
 - `bin/smoke.js` 新增 Codex 安装与全局拒绝场景，覆盖 `.codex/skills` 与 `AGENTS.md` 行为。

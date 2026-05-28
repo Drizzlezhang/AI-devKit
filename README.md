@@ -18,10 +18,9 @@ AI-DevKit 用一个安装器交付两类核心能力：
 
 ## 当前支持边界
 - 支持通过包内 `bin/install.js` 作为 CLI 入口
-- 支持安装到当前项目 `./.claude/skills/`
-- 支持检测 `Claude Code`、`Trae CLI`、`Codex CLI` 运行时
-- `Claude Code` 是当前唯一明确完成项目安装 + 全局安装闭环验证的宿主
-- `Trae CLI` 与 `Codex CLI` 当前属于**实验性兼容 / 预留支持**：做运行时识别，并保留项目级兼容扩展基础，但不声明已具备 Claude 同等级别的全局 skills / MCP 集成能力
+- 支持一次安装到当前项目三宿主目录：`./.claude/skills/`、`./.trae/skills/`、`./.codex/skills/`
+- 支持一次全局安装到三宿主目录：`~/.claude/skills/`、`~/.trae/skills/`、`~/.codex/skills/`
+- 安装器不再区分 runtime，统一按 scope（`--project` / `--global`）执行
 - `devkit-init` 与 `devkit-go` 都是 **手动触发 skill**，不会被模型自动调用
 - 当前仓库提供的是 skill、模板与安装器，不负责代替 CI 平台或自动发布系统
 - 因为使用 GitHub Packages，安装与执行通常需要额外的 registry 与 token 配置，体验不同于 npm 官方公开仓库
@@ -58,7 +57,7 @@ AI-DevKit 用一个安装器交付两类核心能力：
 ### 方式 1：本地开发验证
 ```bash
 node bin/install.js --help
-node bin/install.js --project --runtime claude
+node bin/install.js --project
 ```
 
 ### 方式 2：从 GitHub Packages 安装
@@ -68,7 +67,7 @@ npm install @Drizzlezhang/ai-devkit
 
 ### 方式 3：安装后运行 CLI（已验证主路径）
 ```bash
-./node_modules/.bin/ai-devkit --project --runtime claude
+./node_modules/.bin/ai-devkit --project
 ```
 
 如果你的环境没有为 GitHub Packages 配好 registry 和 token，请先完成上面的 `.npmrc` 配置。
@@ -77,14 +76,14 @@ npm install @Drizzlezhang/ai-devkit
 ## 首次使用路径
 1. 配置 GitHub Packages 的 registry 与 token。
 2. 安装 `@Drizzlezhang/ai-devkit`。
-3. 运行安装器，把 skill 安装到当前项目或 Claude 全局 skills 目录。
+3. 运行安装器，按 scope 一次安装到三宿主项目目录或三宿主全局目录。
 4. 在宿主中手动调用 `/devkit-init`，先完成项目扫描、`CLAUDE.md` 方案与安装提案。
 5. 当项目进入具体需求实现时，手动调用 `/devkit-go`，按七阶段闭环推进变更。
 
 如果你只是想快速试用，最小路径是：
 ```bash
 npm install @Drizzlezhang/ai-devkit
-./node_modules/.bin/ai-devkit --project --runtime claude
+./node_modules/.bin/ai-devkit --project
 ```
 随后在目标项目里手动调用：
 ```text
@@ -100,9 +99,8 @@ npm install @Drizzlezhang/ai-devkit
 
 ### 参数
 - `--help` / `-h`：显示帮助
-- `--global`：安装到已验证的全局 skills 目录；当前仅 Claude 支持
-- `--project`：安装到当前项目的运行时目录（Claude: `./.claude/skills`，Trae: `./.trae/skills`，Codex: `./.codex/skills`）
-- `--runtime <name>`：强制指定运行时，可选 `claude` / `trae` / `codex`
+- `--global`：一次安装到三宿主全局 skills 目录（`~/.claude/skills`、`~/.trae/skills`、`~/.codex/skills`）
+- `--project`：一次安装到当前项目三宿主目录（`./.claude/skills`、`./.trae/skills`、`./.codex/skills`）
 
 ### 常用示例
 ```bash
@@ -110,11 +108,9 @@ node bin/install.js --help
 node bin/detect.js --refresh
 ./node_modules/.bin/ai-devkit --help
 ./node_modules/.bin/ai-devkit --project
-./node_modules/.bin/ai-devkit --project --runtime claude
+./node_modules/.bin/ai-devkit --project
 ./node_modules/.bin/ai-devkit-detect --refresh
-./node_modules/.bin/ai-devkit --runtime codex --project
-./node_modules/.bin/ai-devkit --runtime trae --project
-./node_modules/.bin/ai-devkit --runtime claude --global
+./node_modules/.bin/ai-devkit --global
 ```
 
 安装脚本 `bin/install.js` 会：
@@ -124,14 +120,10 @@ node bin/detect.js --refresh
 4. 将 `templates/` 复制到安装后的 `devkit-go` 目录中
 5. 输出安装结果摘要
 
-## 运行时支持说明
-- Claude Code：已明确支持全局安装到 `~/.claude/skills/` 与项目级安装到 `./.claude/skills/`，也是当前唯一完成完整安装闭环验证的目标宿主
-- Codex CLI：支持项目级安装到 `./.codex/skills/`，并在 `AGENTS.md` 写入 managed block；全局安装暂不支持
-- Trae CLI：检测用户级目录 `~/.trae/`；本工程当前只做运行时识别与项目级兼容预留，不声明官方 Claude-style global skills 目录，也不声明完整 MCP 闭环已验证
-
-可以把当前支持理解为：
-- **Claude**：识别 + 项目安装 + 全局安装 + 已验证主路径
-- **Trae / Codex**：识别 + 项目安装 + managed block 写入（`AGENTS.md`）
+## 安装作用域说明
+- `--project`：一次安装到 `./.claude/skills/`、`./.trae/skills/`、`./.codex/skills/`，并写入规则文件 managed block（`CLAUDE.md` + `AGENTS.md`）
+- `--global`：一次安装到 `~/.claude/skills/`、`~/.trae/skills/`、`~/.codex/skills/`
+- 安装器不再提供 `--runtime` 参数
 
 ## 安装后你会得到什么
 安装完成后，目标目录下会出现：

@@ -10,30 +10,24 @@ const ROOT = path.resolve(__dirname, '..');
 const SKILLS_SOURCE = path.join(ROOT, 'skills');
 const TEMPLATES_SOURCE = path.join(ROOT, 'templates');
 
-const RUNTIMES = {
+const HOST_LAYOUTS = {
   claude: {
     label: 'Claude Code',
-    configDir: path.join(os.homedir(), '.claude'),
     globalSkillsDir: path.join(os.homedir(), '.claude', 'skills'),
     projectSkillsDir: '.claude/skills',
     projectRulesFile: 'CLAUDE.md',
-    supportsGlobalInstall: true,
   },
   trae: {
     label: 'Trae CLI',
-    configDir: path.join(os.homedir(), '.trae'),
-    globalSkillsDir: null,
+    globalSkillsDir: path.join(os.homedir(), '.trae', 'skills'),
     projectSkillsDir: '.trae/skills',
     projectRulesFile: 'AGENTS.md',
-    supportsGlobalInstall: false,
   },
   codex: {
     label: 'Codex CLI',
-    configDir: path.join(os.homedir(), '.codex'),
-    globalSkillsDir: null,
+    globalSkillsDir: path.join(os.homedir(), '.codex', 'skills'),
     projectSkillsDir: '.codex/skills',
     projectRulesFile: 'AGENTS.md',
-    supportsGlobalInstall: false,
   },
 };
 
@@ -48,9 +42,8 @@ Usage:
 
 Options:
   --help              Show this help message
-  --global            Install into the verified global skills directory for the selected runtime
-  --project           Install into the current project's runtime-specific skills directory
-  --runtime <name>    Force runtime: claude | trae | codex
+  --global            Install into global skills directories for Claude, Trae, and Codex
+  --project           Install into current project skills directories for Claude, Trae, and Codex
 
 Verified usage paths:
   - Local development: node bin/install.js [options]
@@ -59,20 +52,19 @@ Verified usage paths:
   - Direct npx execution may depend on local registry and auth configuration
 
 What this installer does:
-  - Detects Claude Code, Trae CLI, or Codex CLI from local config directories
-  - Asks whether to install globally or into the current project
-  - Copies devkit-init and devkit-go skills, including their docs, into the target skills directory
-  - Copies templates/ into the installed devkit-go skill directory
+  - Installs devkit-init and devkit-go to all supported hosts (Claude, Trae, Codex)
+  - Installs globally or into current project based on selected scope
+  - Copies skill docs and templates/ into installed devkit-go directories
+  - Writes managed blocks to CLAUDE.md and AGENTS.md for project scope
 
-Runtime notes:
-  - Claude Code uses ~/.claude/skills for global, .claude/skills for project
-  - Trae uses .trae/skills for project installation; global skills managed via IDE UI
-  - Codex uses .codex/skills for project installation; global skill installation is not supported
+Host notes:
+  - Global scope targets: ~/.claude/skills, ~/.trae/skills, ~/.codex/skills
+  - Project scope targets: .claude/skills, .trae/skills, .codex/skills
 `);
 }
 
 function parseArgs(argv) {
-  const args = { help: false, scope: null, runtime: null };
+  const args = { help: false, scope: null };
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -92,15 +84,6 @@ function parseArgs(argv) {
       continue;
     }
 
-    if (arg === '--runtime') {
-      const value = argv[i + 1];
-      if (!value) {
-        throw new Error('Missing value for --runtime');
-      }
-      args.runtime = value.toLowerCase();
-      i += 1;
-      continue;
-    }
 
     throw new Error(`Unknown argument: ${arg}`);
   }
@@ -112,50 +95,13 @@ function parseArgs(argv) {
   return args;
 }
 
-function detectRuntime(preferredRuntime) {
-  if (preferredRuntime) {
-    const runtime = RUNTIMES[preferredRuntime];
-    if (!runtime) {
-      throw new Error(`Unsupported runtime: ${preferredRuntime}`);
-    }
-    return {
-      key: preferredRuntime,
-      runtime,
-      detected: fs.existsSync(runtime.configDir),
-      note: fs.existsSync(runtime.configDir)
-        ? `Using forced runtime ${runtime.label}.`
-        : `Using forced runtime ${runtime.label}; config directory does not exist yet.`,
-    };
-  }
-
-  const detected = Object.entries(RUNTIMES)
-    .map(([key, runtime]) => ({ key, runtime, exists: fs.existsSync(runtime.configDir) }))
-    .filter((entry) => entry.exists);
-
-  if (detected.length === 1) {
-    return {
-      key: detected[0].key,
-      runtime: detected[0].runtime,
-      detected: true,
-      note: `Detected ${detected[0].runtime.label} from ${detected[0].runtime.configDir}.`,
-    };
-  }
-
-  if (detected.length > 1) {
-    return {
-      key: detected[0].key,
-      runtime: detected[0].runtime,
-      detected: true,
-      note: `Detected multiple runtimes (${detected.map((entry) => entry.runtime.label).join(', ')}). Defaulting to ${detected[0].runtime.label}. Use --runtime to override.`,
-    };
-  }
-
-  return {
-    key: 'claude',
-    runtime: RUNTIMES.claude,
-    detected: false,
-    note: 'No known runtime config directory was found. Falling back to Claude-compatible layout.',
-  };
+function resolveTargets(scope, projectRoot) {
+  return Object.entries(HOST_LAYOUTS).map(([host, layout]) => ({
+    host,
+    label: layout.label,
+    skillsDir: scope === 'global' ? layout.globalSkillsDir : path.join(projectRoot, layout.projectSkillsDir),
+    projectRulesFile: scope === 'project' ? layout.projectRulesFile : null,
+  }));
 }
 
 function createInterface() {
@@ -186,7 +132,7 @@ async function chooseScope(explicitScope) {
     while (true) {
       const answer = (await askQuestion(
         rl,
-        'Select install scope: [1] Global [2] Project (runtime-specific dir) > '
+        'Select install scope: [1] Global [2] Project > '
       )).toLowerCase();
 
       if (answer === '1' || answer === 'global' || answer === 'g') {
@@ -386,36 +332,31 @@ async function main() {
     return;
   }
 
-  const runtimeSelection = detectRuntime(args.runtime);
   const scope = await chooseScope(args.scope);
-
-  const targetSkillsDir = scope === 'global'
-    ? runtimeSelection.runtime.globalSkillsDir
-    : path.join(process.cwd(), runtimeSelection.runtime.projectSkillsDir);
-
-  if (scope === 'global' && !runtimeSelection.runtime.supportsGlobalInstall) {
-    throw new Error(
-      `${runtimeSelection.runtime.label} does not support global skill installation. Use --project instead.`
-    );
-  }
-
-  ensureDirectory(targetSkillsDir);
+  const projectRoot = process.cwd();
+  const targets = resolveTargets(scope, projectRoot);
 
   const copiedFiles = [];
   const installedSkillNames = ['devkit-init', 'devkit-go'];
-  installSkill('devkit-init', targetSkillsDir, copiedFiles);
-  installSkill('devkit-go', targetSkillsDir, copiedFiles);
+
+  for (const target of targets) {
+    ensureDirectory(target.skillsDir);
+    installSkill('devkit-init', target.skillsDir, copiedFiles);
+    installSkill('devkit-go', target.skillsDir, copiedFiles);
+  }
 
   if (scope === 'project') {
-    recordInstalledSkills(process.cwd(), installedSkillNames);
-    writeManagedBlockForProject(process.cwd(), installedSkillNames, runtimeSelection.runtime.projectRulesFile);
+    recordInstalledSkills(projectRoot, installedSkillNames);
+    writeManagedBlockForProject(projectRoot, installedSkillNames, 'CLAUDE.md');
+    writeManagedBlockForProject(projectRoot, installedSkillNames, 'AGENTS.md');
   }
 
   console.log('ai-devkit installation complete.');
-  console.log(`Runtime: ${runtimeSelection.runtime.label}`);
-  console.log(`Detection: ${runtimeSelection.note}`);
   console.log(`Scope: ${scope}`);
-  console.log(`Target skills directory: ${targetSkillsDir}`);
+  console.log('Host targets:');
+  for (const target of targets) {
+    console.log(`- ${target.label}: ${target.skillsDir}`);
+  }
   console.log('Copied files:');
   for (const file of copiedFiles) {
     console.log(`- ${file}`);
