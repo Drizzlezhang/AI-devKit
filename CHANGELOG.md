@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-28
+
 ### Changed
 - BREAKING: 安装器移除 `--runtime` 参数，仅保留 `--project` / `--global` 两种作用域。
 - `bin/install.js` 改为 host 聚合安装：一次执行同时安装 Claude/Codex/Trae 三宿主（project/global 同步生效），project 模式统一写入 `CLAUDE.md` 与 `AGENTS.md` managed block。

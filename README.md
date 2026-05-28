@@ -108,17 +108,16 @@ node bin/install.js --help
 node bin/detect.js --refresh
 ./node_modules/.bin/ai-devkit --help
 ./node_modules/.bin/ai-devkit --project
-./node_modules/.bin/ai-devkit --project
 ./node_modules/.bin/ai-devkit-detect --refresh
 ./node_modules/.bin/ai-devkit --global
 ```
 
 安装脚本 `bin/install.js` 会：
-1. 检测当前环境更接近 Claude Code、Trae CLI 还是 Codex CLI
-2. 让用户选择全局安装或项目级安装
+1. 让用户选择全局安装或项目级安装（未显式参数时）
+2. 按 scope 一次写入 Claude / Trae / Codex 三宿主目标目录
 3. 复制 `devkit-init` 与 `devkit-go` 的入口 `SKILL.md` 及其 `docs/` 子文档
 4. 将 `templates/` 复制到安装后的 `devkit-go` 目录中
-5. 输出安装结果摘要
+5. project 模式写入 `CLAUDE.md` 与 `AGENTS.md` managed block，并输出聚合结果摘要
 
 ## 安装作用域说明
 - `--project`：一次安装到 `./.claude/skills/`、`./.trae/skills/`、`./.codex/skills/`，并写入规则文件 managed block（`CLAUDE.md` + `AGENTS.md`）
@@ -233,8 +232,8 @@ node bin/detect.js --refresh
 ```
 
 ### 4. 什么时候选项目级 / 全局安装
-- **项目级安装**：适合当前仓库试用、团队内按 repo 管理能力、或在 Codex / Trae 中兼容使用
-- **全局安装**：适合你已经确定长期在 Claude Code 中复用这两个 skill
+- **项目级安装**：适合当前仓库试用、团队内按 repo 管理能力、或希望改动仅限当前项目
+- **全局安装**：适合你已经确定长期在本机 Claude/Codex/Trae 三宿主复用这两个 skill
 - 如果不确定，优先从 `--project` 开始，影响范围更小
 
 ## 目录结构
